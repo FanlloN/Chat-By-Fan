@@ -109,35 +109,63 @@ function setupSettingsMenu(menu) {
     });
 
     // Change Avatar
-    changeAvatarBtn.addEventListener('click', () => {
+    changeAvatarBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        console.log('Avatar button clicked');
+
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
+        input.style.display = 'none';
+        input.multiple = false;
+
+        input.onchange = async (event) => {
+            console.log('File selected:', event.target.files[0]);
+            const file = event.target.files[0];
             if (file) {
-                uploadAvatar(file);
+                try {
+                    await uploadAvatar(file);
+                } catch (error) {
+                    console.error('Avatar upload failed:', error);
+                    showNotification('Ошибка загрузки аватарки', 'error');
+                }
+            }
+            if (input.parentNode) {
+                input.parentNode.removeChild(input);
             }
         };
-        input.click();
+
+        // Add to body and trigger
+        document.body.appendChild(input);
+        setTimeout(() => {
+            input.click();
+        }, 10);
+
         menu.remove();
     });
 
     themeSwitch.addEventListener('change', toggleTheme);
 
     // Logout
-    logoutBtn.addEventListener('click', async () => {
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         if (confirm('Вы уверены, что хотите выйти?')) {
-            try {
-                await window.logoutUser();
+            window.logoutUser().then(() => {
                 // Force redirect to auth screen
                 const authScreen = document.getElementById('authScreen');
                 const app = document.getElementById('app');
-                authScreen.style.display = 'flex';
-                app.style.display = 'none';
-            } catch (error) {
+                if (authScreen && app) {
+                    authScreen.style.display = 'flex';
+                    app.style.display = 'none';
+                }
+            }).catch((error) => {
                 console.error('Logout error:', error);
-            }
+                showNotification('Ошибка при выходе', 'error');
+            });
         }
         menu.remove();
     });
@@ -273,34 +301,47 @@ function initUI() {
 
 // Upload Avatar
 async function uploadAvatar(file) {
-    if (!window.currentUser()) return;
+    if (!window.currentUser()) {
+        showNotification('Сначала войдите в аккаунт', 'error');
+        return;
+    }
 
     // Validate file
     if (!file.type.startsWith('image/')) {
-        alert('Пожалуйста, выберите изображение');
+        showNotification('Пожалуйста, выберите изображение', 'error');
         return;
     }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('Файл слишком большой. Максимальный размер: 5MB');
+        showNotification('Файл слишком большой. Максимальный размер: 5MB', 'error');
         return;
     }
 
     try {
         showNotification('Загрузка аватарки...', 'info');
 
-        // Create storage reference
-        const storageRef = window.storageRef(window.storage, `avatars/${window.currentUser().uid}`);
-        const uploadTask = window.uploadBytes(storageRef, file);
+        // Create unique filename with timestamp
+        const timestamp = Date.now();
+        const fileName = `avatar_${window.currentUser().uid}_${timestamp}`;
+        const storageRef = window.storageRef(window.storage, `avatars/${fileName}`);
 
-        // Wait for upload
-        const snapshot = await uploadTask;
+        // Upload file
+        const snapshot = await window.uploadBytes(storageRef, file);
         const downloadURL = await window.getDownloadURL(snapshot.ref);
 
         // Update user profile in database
         await window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
             avatar: downloadURL
         });
+
+        // Update local avatar display immediately
+        const userAvatar = document.getElementById('userAvatar');
+        if (userAvatar) {
+            userAvatar.src = downloadURL;
+            userAvatar.onerror = () => {
+                userAvatar.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23666666"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">👤</text></svg>';
+            };
+        }
 
         showNotification('Аватарка обновлена!', 'success');
     } catch (error) {
