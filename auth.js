@@ -127,6 +127,8 @@ async function logoutUser() {
 
         await window.signOut(window.auth);
         currentUser = null;
+        // Force show auth screen immediately
+        showAuth();
     } catch (error) {
         console.error('Logout error:', error);
         alert('Ошибка при выходе из аккаунта');

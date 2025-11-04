@@ -126,9 +126,18 @@ function setupSettingsMenu(menu) {
     themeSwitch.addEventListener('change', toggleTheme);
 
     // Logout
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
         if (confirm('Вы уверены, что хотите выйти?')) {
-            window.logoutUser();
+            try {
+                await window.logoutUser();
+                // Force redirect to auth screen
+                const authScreen = document.getElementById('authScreen');
+                const app = document.getElementById('app');
+                authScreen.style.display = 'flex';
+                app.style.display = 'none';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
         }
         menu.remove();
     });
