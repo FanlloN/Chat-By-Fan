@@ -1,4 +1,6 @@
 /* Chat by Fan - Minimalist Parallax Styles */
+@import url('https://fonts.googleapis.com/css2?family=Jalnan&display=swap');
+
 :root {
     --primary: #6366f1;
     --primary-dark: #4f46e5;
@@ -29,8 +31,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Jalnan&display=swap');
 
 body {
     font-family: 'Jalnan', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
