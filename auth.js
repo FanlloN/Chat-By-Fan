@@ -60,12 +60,16 @@ async function loginUser() {
 
         // Try to login with the standard email pattern
         const email = `${username}@chatbyfan.local`;
-        await window.signInWithEmailAndPassword(window.auth, email, password);
+        const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
+
+        // Force refresh auth state
+        await window.auth.currentUser.reload();
 
         // User will be handled by onAuthStateChanged
     } catch (error) {
         console.error('Login error:', error);
-        alert('Неверный никнейм или пароль');
+        const errorMessage = getAuthErrorMessage(error.code) || 'Неверный никнейм или пароль';
+        alert(errorMessage);
         loginBtn.innerHTML = 'Войти';
         loginBtn.disabled = false;
     }
@@ -95,6 +99,17 @@ async function registerUser() {
         registerBtn.innerHTML = '<div class="loading"></div>';
         registerBtn.disabled = true;
 
+        // Check if username is already taken
+        const usernameCheckRef = window.dbRef(window.database, `usernames/${username}`);
+        const usernameSnapshot = await window.get(usernameCheckRef);
+
+        if (usernameSnapshot.exists()) {
+            alert('Этот никнейм уже занят. Пожалуйста, выберите другой.');
+            registerBtn.innerHTML = 'Создать аккаунт';
+            registerBtn.disabled = false;
+            return;
+        }
+
         // Generate a unique email for Firebase Auth (since we use username for login)
         const uniqueEmail = `${username}@chatbyfan.local`;
 
@@ -113,6 +128,9 @@ async function registerUser() {
             lastSeen: Date.now(),
             online: true
         });
+
+        // Reserve the username
+        await window.set(usernameCheckRef, { uid: user.uid });
 
         // User will be handled by onAuthStateChanged
     } catch (error) {
@@ -186,17 +204,21 @@ function getAuthErrorMessage(errorCode) {
         case 'auth/user-disabled':
             return 'Аккаунт заблокирован';
         case 'auth/user-not-found':
-            return 'Пользователь не найден';
+            return 'Пользователь с таким никнеймом не найден';
         case 'auth/wrong-password':
             return 'Неверный пароль';
+        case 'auth/invalid-login-credentials':
+            return 'Неверный никнейм или пароль';
         case 'auth/email-already-in-use':
             return 'Email уже используется';
         case 'auth/weak-password':
-            return 'Пароль слишком слабый';
+            return 'Пароль должен содержать минимум 6 символов';
         case 'auth/operation-not-allowed':
-            return 'Операция не разрешена';
+            return 'Регистрация временно недоступна';
         case 'auth/network-request-failed':
-            return 'Ошибка сети';
+            return 'Ошибка сети. Проверьте подключение к интернету';
+        case 'auth/too-many-requests':
+            return 'Слишком много попыток. Попробуйте позже';
         default:
             return 'Произошла ошибка. Попробуйте еще раз.';
     }

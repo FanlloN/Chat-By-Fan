@@ -24,6 +24,14 @@
     --parallax-speed: 0.5;
     --auth-subtitle: #64748b;
     --auth-switch: #64748b;
+    /* Telegram-style variables */
+    --tg-text: var(--text);
+    --tg-text-light: var(--text-light);
+    --tg-blue: var(--primary);
+    --tg-border: var(--border);
+    --tg-radius: var(--radius);
+    --tg-bg: var(--bg);
+    --tg-bg-alt: var(--bg-alt);
 }
 
 * {
@@ -55,7 +63,7 @@ body::before {
         radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
         radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.35) 0%, transparent 50%);
     pointer-events: none;
-    z-index: -1;
+    z-index: -2;
     transition: background 0.5s ease;
 }
 
@@ -82,6 +90,8 @@ body::before {
     text-align: center;
     transform: translateY(0);
     transition: transform 0.3s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .auth-container:hover {
@@ -105,6 +115,8 @@ body::before {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-align: center;
+    position: relative;
+    z-index: 2;
 }
 
 .auth-header p {
