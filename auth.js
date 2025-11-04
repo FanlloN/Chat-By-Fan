@@ -6,10 +6,9 @@ const authScreen = document.getElementById('authScreen');
 const app = document.getElementById('app');
 const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
-const loginEmail = document.getElementById('loginEmail');
+const loginUsername = document.getElementById('loginUsername');
 const loginPassword = document.getElementById('loginPassword');
 const registerUsername = document.getElementById('registerUsername');
-const registerEmail = document.getElementById('registerEmail');
 const registerPassword = document.getElementById('registerPassword');
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
@@ -47,10 +46,10 @@ function showApp() {
 
 // Login User
 async function loginUser() {
-    const email = loginEmail.value.trim();
+    const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    if (!email || !password) {
+    if (!username || !password) {
         alert('Пожалуйста, заполните все поля');
         return;
     }
@@ -59,11 +58,28 @@ async function loginUser() {
         loginBtn.innerHTML = '<div class="loading"></div>';
         loginBtn.disabled = true;
 
-        await window.signInWithEmailAndPassword(window.auth, email, password);
+        // Find user by username and get their email
+        const usersRef = window.dbRef(window.database, 'users');
+        const snapshot = await window.get(usersRef);
+        const usersData = snapshot.val();
+
+        let userEmail = null;
+        for (const [uid, userData] of Object.entries(usersData || {})) {
+            if (userData.username === username) {
+                userEmail = userData.email;
+                break;
+            }
+        }
+
+        if (!userEmail) {
+            throw new Error('Пользователь не найден');
+        }
+
+        await window.signInWithEmailAndPassword(window.auth, userEmail, password);
         // User will be handled by onAuthStateChanged
     } catch (error) {
         console.error('Login error:', error);
-        alert(getAuthErrorMessage(error.code));
+        alert(error.message === 'Пользователь не найден' ? error.message : getAuthErrorMessage(error.code));
         loginBtn.innerHTML = 'Войти';
         loginBtn.disabled = false;
     }
@@ -72,11 +88,15 @@ async function loginUser() {
 // Register User
 async function registerUser() {
     const username = registerUsername.value.trim();
-    const email = registerEmail.value.trim();
     const password = registerPassword.value.trim();
 
-    if (!username || !email || !password) {
+    if (!username || !password) {
         alert('Пожалуйста, заполните все поля');
+        return;
+    }
+
+    if (username.length < 3) {
+        alert('Никнейм должен содержать минимум 3 символа');
         return;
     }
 
@@ -89,15 +109,28 @@ async function registerUser() {
         registerBtn.innerHTML = '<div class="loading"></div>';
         registerBtn.disabled = true;
 
+        // Check if username is already taken
+        const usersRef = window.dbRef(window.database, 'users');
+        const snapshot = await window.get(usersRef);
+        const usersData = snapshot.val() || {};
+
+        const usernameExists = Object.values(usersData).some(user => user.username === username);
+        if (usernameExists) {
+            throw new Error('Этот никнейм уже занят');
+        }
+
+        // Generate a unique email for Firebase Auth (since we use username for login)
+        const uniqueEmail = `${username}_${Date.now()}@chatbyfan.local`;
+
         // Create user account
-        const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
+        const userCredential = await window.createUserWithEmailAndPassword(window.auth, uniqueEmail, password);
         const user = userCredential.user;
 
         // Save user profile to database
         await window.set(window.dbRef(window.database, `users/${user.uid}`), {
             uid: user.uid,
             username: username,
-            email: email,
+            email: uniqueEmail,
             displayName: username,
             avatar: null,
             createdAt: Date.now(),
@@ -108,7 +141,7 @@ async function registerUser() {
         // User will be handled by onAuthStateChanged
     } catch (error) {
         console.error('Registration error:', error);
-        alert(getAuthErrorMessage(error.code));
+        alert(error.message || getAuthErrorMessage(error.code));
         registerBtn.innerHTML = 'Создать аккаунт';
         registerBtn.disabled = false;
     }
@@ -197,7 +230,7 @@ function getAuthErrorMessage(errorCode) {
 loginBtn.addEventListener('click', loginUser);
 registerBtn.addEventListener('click', registerUser);
 
-loginEmail.addEventListener('keydown', (e) => {
+loginUsername.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') loginUser();
 });
 
@@ -206,10 +239,6 @@ loginPassword.addEventListener('keydown', (e) => {
 });
 
 registerUsername.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') registerUser();
-});
-
-registerEmail.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') registerUser();
 });
 

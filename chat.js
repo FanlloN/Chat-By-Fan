@@ -264,9 +264,11 @@ async function startNewChat() {
         const usersData = snapshot.val();
 
         let targetUserId = null;
-        for (const [uid, userData] of Object.entries(usersData)) {
+        let targetUserData = null;
+        for (const [uid, userData] of Object.entries(usersData || {})) {
             if (userData.username === username) {
                 targetUserId = uid;
+                targetUserData = userData;
                 break;
             }
         }
@@ -364,6 +366,17 @@ function updateChatUI() {
     chatName.textContent = otherParticipant?.displayName || otherParticipant?.username || 'Неизвестный';
     chatStatus.textContent = otherParticipant?.online ? 'онлайн' : 'был(а) недавно';
     chatAvatar.src = otherParticipant?.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23666666"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">👤</text></svg>';
+
+    // Update chat header with real-time avatar changes
+    if (otherParticipantId) {
+        const userRef = window.dbRef(window.database, `users/${otherParticipantId}`);
+        window.onValue(userRef, (snapshot) => {
+            const userData = snapshot.val();
+            if (userData && userData.avatar) {
+                chatAvatar.src = userData.avatar;
+            }
+        });
+    }
 
     // Listen for avatar changes in chat header
     if (otherParticipantId) {
