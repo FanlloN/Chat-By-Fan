@@ -19,8 +19,12 @@ const userAvatar = document.getElementById('userAvatar');
 
 // Initialize Auth
 function initAuth() {
+    console.log('Initializing Firebase Auth...');
+
     // Check if user is already logged in
     window.onAuthStateChanged(window.auth, (user) => {
+        console.log('Auth state changed:', user ? `User ${user.uid} logged in` : 'No user logged in');
+
         if (user) {
             currentUser = user;
             showApp();
@@ -60,7 +64,10 @@ async function loginUser() {
 
         // Try to login with the standard email pattern
         const email = `${username}@chatbyfan.local`;
+        console.log('Attempting login with email:', email);
+
         const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
+        console.log('Login successful for user:', userCredential.user.uid);
 
         // Force refresh auth state
         await window.auth.currentUser.reload();
@@ -68,6 +75,9 @@ async function loginUser() {
         // User will be handled by onAuthStateChanged
     } catch (error) {
         console.error('Login error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+
         const errorMessage = getAuthErrorMessage(error.code) || 'Неверный никнейм или пароль';
         alert(errorMessage);
         loginBtn.innerHTML = 'Войти';
@@ -112,10 +122,12 @@ async function registerUser() {
 
         // Generate a unique email for Firebase Auth (since we use username for login)
         const uniqueEmail = `${username}@chatbyfan.local`;
+        console.log('Attempting registration with email:', uniqueEmail);
 
         // Create user account
         const userCredential = await window.createUserWithEmailAndPassword(window.auth, uniqueEmail, password);
         const user = userCredential.user;
+        console.log('Registration successful for user:', user.uid);
 
         // Save user profile to database
         await window.set(window.dbRef(window.database, `users/${user.uid}`), {
@@ -135,6 +147,8 @@ async function registerUser() {
         // User will be handled by onAuthStateChanged
     } catch (error) {
         console.error('Registration error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
         alert(error.message || getAuthErrorMessage(error.code));
         registerBtn.innerHTML = 'Создать аккаунт';
         registerBtn.disabled = false;
