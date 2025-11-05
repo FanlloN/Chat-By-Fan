@@ -320,12 +320,6 @@ async function uploadAvatar(file) {
     try {
         showNotification('Загрузка аватарки...', 'info');
 
-        // For now, just show success without actually uploading
-        // Firebase Storage has CORS issues on GitHub Pages
-        showNotification('Аватарка обновлена! (демо режим)', 'success');
-
-        // In production, uncomment this code:
-        /*
         // Create unique filename with timestamp
         const timestamp = Date.now();
         const fileName = `avatar_${window.currentUser().uid}_${timestamp}`;
@@ -345,7 +339,8 @@ async function uploadAvatar(file) {
         if (userAvatar) {
             userAvatar.src = downloadURL;
         }
-        */
+
+        showNotification('Аватарка успешно обновлена!', 'success');
 
     } catch (error) {
         console.error('Error uploading avatar:', error);

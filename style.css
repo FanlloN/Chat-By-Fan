@@ -110,10 +110,6 @@ body::before {
     font-weight: 700;
     margin-bottom: 10px;
     color: var(--text);
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     text-align: center;
     position: relative;
     z-index: 2;

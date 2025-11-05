@@ -109,8 +109,13 @@ async function loginUser() {
                 return;
             } catch (regError) {
                 console.error('Auto-registration failed:', regError);
-                const errorMessage = getAuthErrorMessage(error.code) || 'Неверный никнейм или пароль';
-                alert(errorMessage);
+                // If auto-registration fails, show registration form
+                alert('Аккаунт не найден. Переходим к регистрации...');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                registerUsername.value = username;
+                registerPassword.value = password;
+                return;
             }
         } else {
             const errorMessage = getAuthErrorMessage(error.code) || 'Неверный никнейм или пароль';
