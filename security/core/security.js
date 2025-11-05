@@ -226,12 +226,7 @@ class SecurityCore {
             url: window.location.href
         };
 
-        // Only log critical security alerts to console
-        if (type.includes('VIOLATION') || type.includes('ATTACK') || type.includes('BREACH')) {
-            console.warn('Security Alert:', alert);
-        }
-
-        // Store alert for analysis
+        // Store alert for analysis (don't log to console to prevent recursion)
         this.threats.set(Date.now(), alert);
 
         // In production, this would send to security monitoring service

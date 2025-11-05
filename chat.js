@@ -90,7 +90,7 @@ let replyToMessageId = null;
     };
 
     console.warn = function(...args) {
-        // Allow warnings but don't trigger security alerts for normal browser warnings
+        // Completely disable security alerts for console.warn to prevent recursion
         return originalWarn.apply(console, args);
     };
 
