@@ -453,7 +453,7 @@ body.dark-theme .chat-item.active {
 
 /* Pin Chat Button */
 .pin-chat-btn {
-    background: transparent;
+    background: none;
     border: none;
     font-size: 16px;
     cursor: pointer;
@@ -2080,9 +2080,9 @@ input:checked + .slider:before {
         width: 44px;
         height: 44px;
         border-radius: 22px;
-        background: rgba(99, 102, 241, 0.1);
-        border: 1px solid var(--border);
-        color: var(--primary);
+        background: none;
+        border: none;
+        color: var(--text-light);
         font-size: 20px;
         flex-shrink: 0;
     }
