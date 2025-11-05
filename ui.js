@@ -7,6 +7,31 @@ const faqBtn = document.getElementById('faqBtn');
 const faqModal = document.getElementById('faqModal');
 const closeFaqModal = document.getElementById('closeFaqModal');
 
+// Notification system for messages
+let notificationsEnabled = true;
+let callsEnabled = false;
+
+// Check notification permission and enable notifications
+async function initNotifications() {
+    if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            notificationsEnabled = localStorage.getItem('notifications') !== 'false';
+        }
+    }
+}
+
+// Show browser notification
+function showBrowserNotification(title, body, icon = '/favicon.ico') {
+    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        new Notification(title, {
+            body: body,
+            icon: icon,
+            tag: 'chat-message'
+        });
+    }
+}
+
 // Search Functionality
 function initSearch() {
     let searchTimeout;
@@ -43,9 +68,9 @@ function filterChats(query) {
     });
 }
 
-// Settings Menu
+// Settings Modal
 function initSettings() {
-    settingsBtn.addEventListener('click', showSettingsMenu);
+    settingsBtn.addEventListener('click', showSettingsModal);
 }
 
 // FAQ Functionality
@@ -69,115 +94,237 @@ function hideFAQModal() {
     faqModal.style.display = 'none';
 }
 
-// Show Settings Menu
-function showSettingsMenu() {
-    // Create settings menu
-    const settingsMenu = document.createElement('div');
-    settingsMenu.className = 'settings-menu';
-    settingsMenu.innerHTML = `
-        <div class="settings-item" id="changeAvatarBtn">
-            <span>📷 Изменить аватарку</span>
-        </div>
-        <div class="settings-item" id="themeToggle">
-            <span>🌙 Темная тема</span>
-            <label class="switch">
-                <input type="checkbox" id="themeSwitch">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div class="settings-item" id="logoutBtn">
-            <span>🚪 Выйти</span>
-        </div>
-    `;
+// Show Settings Modal
+function showSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    modal.style.display = 'flex';
 
-    // Position menu
-    const rect = settingsBtn.getBoundingClientRect();
-    settingsMenu.style.position = 'absolute';
-    settingsMenu.style.top = rect.bottom + 10 + 'px';
-    settingsMenu.style.right = '15px';
-    settingsMenu.style.zIndex = '1000';
-
-    // Add to DOM
-    document.body.appendChild(settingsMenu);
+    // Load current settings
+    loadSettings();
 
     // Setup event listeners
-    setupSettingsMenu(settingsMenu);
-
-    // Close on outside click
-    setTimeout(() => {
-        document.addEventListener('click', function closeMenu(e) {
-            if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
-                settingsMenu.remove();
-                document.removeEventListener('click', closeMenu);
-            }
-        });
-    }, 100);
+    setupSettingsModal();
 }
 
-// Setup Settings Menu
-function setupSettingsMenu(menu) {
-    const changeAvatarBtn = menu.querySelector('#changeAvatarBtn');
-    const themeToggle = menu.querySelector('#themeToggle');
-    const themeSwitch = menu.querySelector('#themeSwitch');
-    const logoutBtn = menu.querySelector('#logoutBtn');
+// Setup Settings Modal
+function setupSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    const closeBtn = document.getElementById('closeSettingsModal');
 
-    // Load current theme
-    const isDark = document.body.classList.contains('dark-theme');
-    themeSwitch.checked = isDark;
-
-    // Theme toggle
-    themeToggle.addEventListener('click', (e) => {
-        if (e.target === themeSwitch) return; // Don't toggle twice
-        themeSwitch.checked = !themeSwitch.checked;
-        toggleTheme();
+    // Tab switching
+    const tabs = modal.querySelectorAll('.settings-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
+        });
     });
 
-    // Change Avatar
-    changeAvatarBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
 
-        console.log('Avatar button clicked');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 
+    // Avatar selection
+    setupAvatarSelection();
+
+    // Password change
+    setupPasswordChange();
+
+    // Privacy settings
+    setupPrivacySettings();
+}
+
+// Load Settings
+function loadSettings() {
+    // Theme
+    const themeToggle = document.getElementById('themeToggle');
+    const isDark = document.body.classList.contains('dark-theme');
+    themeToggle.checked = isDark;
+
+    // Notifications (stored in localStorage)
+    const notificationsToggle = document.getElementById('notificationsToggle');
+    const notificationsEnabled = localStorage.getItem('notifications') !== 'false';
+    notificationsToggle.checked = notificationsEnabled;
+
+    // Calls (stored in localStorage)
+    const callsToggle = document.getElementById('callsToggle');
+    const callsEnabled = localStorage.getItem('calls') === 'true';
+    callsToggle.checked = callsEnabled;
+}
+
+// Switch Tab
+function switchTab(tabName) {
+    const tabs = document.querySelectorAll('.settings-tab');
+    const contents = document.querySelectorAll('.settings-tab-content');
+
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    contents.forEach(content => {
+        content.classList.remove('active');
+    });
+
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+}
+
+// Setup Avatar Selection
+function setupAvatarSelection() {
+    // Emoji buttons
+    const emojiBtns = document.querySelectorAll('.emoji-btn');
+    emojiBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const emoji = btn.dataset.emoji;
+            await setEmojiAvatar(emoji);
+        });
+    });
+
+    // Upload button
+    const uploadBtn = document.getElementById('uploadAvatarBtn');
+    uploadBtn.addEventListener('click', () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
         input.style.display = 'none';
-        input.multiple = false;
 
         input.onchange = async (event) => {
-            console.log('File selected:', event.target.files[0]);
             const file = event.target.files[0];
             if (file) {
                 try {
                     await uploadAvatar(file);
+                    showNotification('Аватар успешно обновлен!', 'success');
                 } catch (error) {
                     console.error('Avatar upload failed:', error);
                     showNotification('Ошибка загрузки аватарки', 'error');
                 }
             }
-            if (input.parentNode) {
-                input.parentNode.removeChild(input);
-            }
         };
 
-        // Add to body and trigger
         document.body.appendChild(input);
         setTimeout(() => {
             input.click();
+            input.remove();
         }, 10);
+    });
+}
 
-        menu.remove();
+// Set Emoji Avatar
+async function setEmojiAvatar(emoji) {
+    if (!window.currentUser()) {
+        showNotification('Сначала войдите в аккаунт', 'error');
+        return;
+    }
+
+    try {
+        // Create SVG with emoji
+        const svgData = `<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#666666"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">${emoji}</text></svg>`;
+        const base64Svg = btoa(svgData);
+
+        // Update user profile in database
+        await window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
+            avatar: `data:image/svg+xml;base64,${base64Svg}`
+        });
+
+        // Update local avatar display immediately
+        const userAvatar = document.getElementById('userAvatar');
+        if (userAvatar) {
+            userAvatar.src = `data:image/svg+xml;base64,${base64Svg}`;
+        }
+
+        showNotification('Аватар успешно обновлен!', 'success');
+    } catch (error) {
+        console.error('Error setting emoji avatar:', error);
+        showNotification('Ошибка обновления аватара', 'error');
+    }
+}
+
+// Setup Password Change
+function setupPasswordChange() {
+    const changeBtn = document.getElementById('changePasswordBtn');
+    changeBtn.addEventListener('click', async () => {
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            showNotification('Заполните все поля', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showNotification('Пароли не совпадают', 'error');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            showNotification('Пароль должен содержать минимум 6 символов', 'error');
+            return;
+        }
+
+        try {
+            showLoading(changeBtn, 'Изменение...');
+
+            // Verify old password by attempting to sign in
+            const user = window.currentUser();
+            const email = `${user.email.split('@')[0]}@chatbyfan.local`;
+
+            try {
+                await window.signInWithEmailAndPassword(window.auth, email, oldPassword);
+            } catch (error) {
+                showNotification('Неверный старый пароль', 'error');
+                hideLoading(changeBtn, 'Изменить пароль');
+                return;
+            }
+
+            // Update password
+            await user.updatePassword(newPassword);
+
+            // Clear form
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+
+            showNotification('Пароль успешно изменен!', 'success');
+        } catch (error) {
+            console.error('Password change error:', error);
+            showNotification('Ошибка изменения пароля', 'error');
+        } finally {
+            hideLoading(changeBtn, 'Изменить пароль');
+        }
+    });
+}
+
+// Setup Privacy Settings
+function setupPrivacySettings() {
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('change', toggleTheme);
+
+    // Notifications toggle
+    const notificationsToggle = document.getElementById('notificationsToggle');
+    notificationsToggle.addEventListener('change', (e) => {
+        localStorage.setItem('notifications', e.target.checked);
+        showNotification(e.target.checked ? 'Уведомления включены' : 'Уведомления отключены', 'info');
     });
 
-    themeSwitch.addEventListener('change', toggleTheme);
+    // Calls toggle
+    const callsToggle = document.getElementById('callsToggle');
+    callsToggle.addEventListener('change', (e) => {
+        localStorage.setItem('calls', e.target.checked);
+        showNotification(e.target.checked ? 'Звонки включены' : 'Звонки отключены', 'info');
+    });
 
-    // Logout
-    logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (confirm('Вы уверены, что хотите выйти?')) {
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    logoutBtn.addEventListener('click', () => {
+        if (confirm('Вы точно хотите выйти из аккаунта?')) {
             window.logoutUser().then(() => {
                 // Force redirect to auth screen
                 const authScreen = document.getElementById('authScreen');
@@ -186,12 +333,12 @@ function setupSettingsMenu(menu) {
                     authScreen.style.display = 'flex';
                     app.style.display = 'none';
                 }
+                document.getElementById('settingsModal').style.display = 'none';
             }).catch((error) => {
                 console.error('Logout error:', error);
                 showNotification('Ошибка при выходе', 'error');
             });
         }
-        menu.remove();
     });
 }
 
@@ -362,6 +509,7 @@ function initUI() {
     initSettings();
     initFAQ();
     initMobile();
+    initNotifications();
     loadSavedTheme();
 }
 
@@ -424,6 +572,7 @@ window.hideTypingIndicator = hideTypingIndicator;
 window.showNotification = showNotification;
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
+window.showBrowserNotification = showBrowserNotification;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initUI);

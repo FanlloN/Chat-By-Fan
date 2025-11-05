@@ -926,36 +926,183 @@ body.dark-theme .modal-header {
     color: var(--text);
 }
 
-/* Settings Menu */
-.settings-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: var(--radius);
-    box-shadow: 0 4px 20px var(--shadow);
-    min-width: 200px;
-    z-index: 1000;
-    overflow: hidden;
+/* Settings Modal */
+.settings-modal-content {
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
-.settings-item {
+.settings-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.settings-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.settings-tab:hover {
+    color: var(--primary);
+}
+
+.settings-content {
+    min-height: 300px;
+}
+
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* Avatar Selection */
+.avatar-selection h4 {
+    margin-bottom: 15px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.emoji-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+    justify-content: center;
 }
 
-.settings-item:last-child {
+.emoji-btn:hover {
+    border-color: var(--primary);
+    transform: scale(1.1);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.avatar-upload {
+    text-align: center;
+}
+
+/* Password Change */
+.password-change .modal-input {
+    margin-bottom: 12px;
+}
+
+/* Privacy Settings */
+.privacy-settings .setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.privacy-settings .setting-item:last-child {
     border-bottom: none;
 }
 
-.settings-item:hover {
-    background: var(--accent);
+.privacy-settings label {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.logout-item {
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--error);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.logout-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Dark Theme Support for Settings */
+body.dark-theme .settings-modal-content {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(30, 41, 59, 0.2);
+}
+
+body.dark-theme .emoji-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: #334155;
+}
+
+body.dark-theme .emoji-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* Responsive Settings */
+@media (max-width: 768px) {
+    .settings-modal-content {
+        max-width: 95vw;
+        max-height: 90vh;
+    }
+
+    .settings-tabs {
+        flex-wrap: wrap;
+    }
+
+    .settings-tab {
+        flex: 1 1 50%;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .emoji-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .emoji-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
 }
 
 /* Settings Switch */

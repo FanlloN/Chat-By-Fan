@@ -275,6 +275,18 @@ async function sendMessage() {
             lastMessage: messageData
         });
 
+        // Show notification for other participants
+        const otherParticipantId = currentChat.data.participants.find(id => id !== window.currentUser().uid);
+        if (otherParticipantId) {
+            const userRef = window.dbRef(window.database, `users/${otherParticipantId}`);
+            const snapshot = await window.get(userRef);
+            const userData = snapshot.val();
+            if (userData) {
+                const senderName = users.get(window.currentUser().uid)?.displayName || users.get(window.currentUser().uid)?.username || 'Пользователь';
+                window.showBrowserNotification('Новое сообщение', `${senderName}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
+            }
+        }
+
         messageInput.value = '';
         scrollToBottom();
     } catch (error) {
