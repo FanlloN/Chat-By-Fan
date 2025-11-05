@@ -42,9 +42,11 @@ function loadChats() {
         const userChats = snapshot.val() || {};
         chats.clear();
 
-        // Load chat details for each chat
+        // Load chat details for each chat, excluding global chat
         Object.keys(userChats).forEach(chatId => {
-            loadChatDetails(chatId);
+            if (chatId !== 'global_chat') {
+                loadChatDetails(chatId);
+            }
         });
 
         renderChatsList();
