@@ -36,7 +36,7 @@ const micSelect = document.getElementById('micSelect');
 // Initialize call functionality
 function initCalls() {
     setupCallEventListeners();
-    loadAvailableDevices();
+    // loadAvailableDevices(); // Disabled to prevent hangs
 }
 
 // Setup event listeners for call controls
@@ -47,16 +47,10 @@ function setupCallEventListeners() {
         callBtn.addEventListener('click', startCall);
     }
 
-    // Call modal controls
-    if (cameraBtn) cameraBtn.addEventListener('click', toggleCamera);
+    // Call modal controls (simplified)
     if (micBtn) micBtn.addEventListener('click', toggleMicrophone);
-    if (screenShareBtn) screenShareBtn.addEventListener('click', toggleScreenShare);
     if (hangupBtn) hangupBtn.addEventListener('click', endCall);
     if (closeCallBtn) closeCallBtn.addEventListener('click', endCall);
-
-    // Device selection
-    if (cameraSelect) cameraSelect.addEventListener('change', switchCamera);
-    if (micSelect) micSelect.addEventListener('change', switchMicrophone);
 
     // Close modal on outside click
     if (callModal) {
@@ -64,6 +58,34 @@ function setupCallEventListeners() {
             if (e.target === callModal) endCall();
         });
     }
+
+    // Handle page unload to end calls
+    window.addEventListener('beforeunload', () => {
+        if (currentCall) {
+            endCall();
+        }
+    });
+
+    // Handle visibility change (when user switches tabs or minimizes)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && currentCall) {
+            // Optional: could show notification or auto-end call
+        }
+    });
+
+    // Handle online/offline events
+    window.addEventListener('online', () => {
+        if (currentCall) {
+            showNotification('Соединение восстановлено', 'success');
+        }
+    });
+
+    window.addEventListener('offline', () => {
+        if (currentCall) {
+            endCall();
+            showNotification('Звонок завершен из-за потери соединения', 'error');
+        }
+    });
 }
 
 // Load available devices (simplified for now)
@@ -79,6 +101,11 @@ async function startCall() {
         return;
     }
 
+    if (currentCall) {
+        showNotification('У вас уже есть активный звонок', 'warning');
+        return;
+    }
+
     try {
         // Get user info for the call
         const otherParticipantId = currentChat.data.participants.find(id => id !== window.currentUser().uid);
@@ -86,6 +113,12 @@ async function startCall() {
 
         if (!otherParticipant) {
             showNotification('Не удалось найти информацию о пользователе', 'error');
+            return;
+        }
+
+        // Check if user is online (optional)
+        if (!otherParticipant.online) {
+            showNotification('Пользователь не в сети', 'warning');
             return;
         }
 
@@ -170,6 +203,18 @@ async function initializeCall() {
         peerConnection.onconnectionstatechange = () => {
             console.log('Connection state:', peerConnection.connectionState);
             updateCallStatus(peerConnection.connectionState);
+
+            // Auto-end call if connection fails
+            if (peerConnection.connectionState === 'failed' ||
+                peerConnection.connectionState === 'disconnected' ||
+                peerConnection.connectionState === 'closed') {
+                setTimeout(() => {
+                    if (currentCall) {
+                        endCall();
+                        showNotification('Звонок завершен из-за проблем с соединением', 'info');
+                    }
+                }, 2000); // Give 2 seconds for potential recovery
+            }
         };
 
         // Create offer
@@ -311,9 +356,9 @@ function showIncomingCall(data) {
 // Accept incoming call
 async function acceptCall(data) {
     try {
-        // Initialize local media
+        // Initialize local media (audio only for now)
         localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: false, // Disabled for now
             audio: true
         });
 
