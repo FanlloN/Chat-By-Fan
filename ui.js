@@ -196,31 +196,72 @@ function loadSavedTheme() {
 
 // Mobile Responsiveness
 function initMobile() {
-    const sidebar = document.querySelector('.sidebar');
-    const chatArea = document.querySelector('.chat-area');
+    // Prevent zoom on input focus for iOS
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            if (window.innerWidth <= 768) {
+                // Small delay to ensure viewport is set
+                setTimeout(() => {
+                    const viewport = document.querySelector('meta[name=viewport]');
+                    if (viewport) {
+                        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                    }
+                }, 100);
+            }
+        });
 
-    // Toggle sidebar on mobile
-    function toggleSidebar() {
-        sidebar.classList.toggle('open');
-    }
-
-    // Close sidebar when clicking on chat area
-    chatArea.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.remove('open');
-        }
+        input.addEventListener('blur', () => {
+            if (window.innerWidth <= 768) {
+                const viewport = document.querySelector('meta[name=viewport]');
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                }
+            }
+        });
     });
 
-    // Add mobile menu button to chat header
-    const chatHeader = document.getElementById('chatHeader');
-    if (chatHeader && window.innerWidth <= 768) {
-        const mobileMenuBtn = document.createElement('button');
-        mobileMenuBtn.className = 'mobile-menu-btn';
-        mobileMenuBtn.innerHTML = '☰';
-        mobileMenuBtn.addEventListener('click', toggleSidebar);
+    // Handle orientation changes
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            // Recalculate heights after orientation change
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }, 100);
+    });
 
-        chatHeader.insertBefore(mobileMenuBtn, chatHeader.firstChild);
+    // Set CSS custom property for mobile height
+    function setMobileHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
+
+    setMobileHeight();
+    window.addEventListener('resize', setMobileHeight);
+
+    // Improve touch interactions
+    const chatItems = document.querySelectorAll('.chat-item');
+    chatItems.forEach(item => {
+        item.addEventListener('touchstart', () => {
+            item.style.background = 'rgba(99, 102, 241, 0.1)';
+        });
+
+        item.addEventListener('touchend', () => {
+            setTimeout(() => {
+                item.style.background = '';
+            }, 150);
+        });
+    });
+
+    // Prevent double-tap zoom
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
 }
 
 // Typing Indicator

@@ -398,19 +398,8 @@ function updateChatUI() {
         const userRef = window.dbRef(window.database, `users/${otherParticipantId}`);
         window.onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
-            if (userData && userData.avatar) {
-                chatAvatar.src = userData.avatar;
-            }
-        });
-    }
-
-    // Listen for avatar changes in chat header
-    if (otherParticipantId) {
-        const userRef = window.dbRef(window.database, `users/${otherParticipantId}`);
-        window.onValue(userRef, (snapshot) => {
-            const userData = snapshot.val();
-            if (userData && userData.avatar) {
-                chatAvatar.src = userData.avatar;
+            if (userData) {
+                chatAvatar.src = userData.avatar || defaultAvatar;
             }
         });
     }
