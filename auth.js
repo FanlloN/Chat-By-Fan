@@ -53,46 +53,37 @@ async function loginUser() {
     const username = loginUsername.value.trim().toLowerCase();
     const password = loginPassword.value.trim();
 
-    // Validate input with security module
-    const usernameValidation = window.inputValidation.validate(username, 'username');
-    const passwordValidation = window.inputValidation.validate(password, 'password');
-
-    if (!usernameValidation.valid) {
-        alert(usernameValidation.error);
+    // Basic validation first
+    if (!username || !password) {
+        alert('Пожалуйста, заполните все поля');
         return;
     }
 
-    if (!passwordValidation.valid) {
-        alert(passwordValidation.error);
+    // Simple validation without security modules for now
+    if (username.length < 3 || username.length > 30) {
+        alert('Имя пользователя должно содержать от 3 до 30 символов');
         return;
     }
 
-    // Sanitize inputs
-    const sanitizedUsername = window.inputValidation.sanitize(username, 'username');
-    const sanitizedPassword = window.inputValidation.sanitize(password, 'password');
+    if (password.length < 6) {
+        alert('Пароль должен содержать минимум 6 символов');
+        return;
+    }
 
     try {
         loginBtn.innerHTML = '<div class="loading"></div>';
         loginBtn.disabled = true;
 
-        // Use secure authentication
-        const result = await window.authSecurity.secureLogin({
-            username: sanitizedUsername,
-            password: sanitizedPassword
-        });
-
-        if (!result.success) {
-            alert(result.error);
-            loginBtn.innerHTML = 'Войти';
-            loginBtn.disabled = false;
-            return;
-        }
+        // Direct Firebase login (bypass security modules for now)
+        const email = `${username}@chatbyfan.local`;
+        const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
 
         // Success - user will be handled by onAuthStateChanged
 
     } catch (error) {
         console.error('Login error:', error);
-        alert('Произошла ошибка при входе. Попробуйте еще раз.');
+        const errorMessage = getAuthErrorMessage(error.code);
+        alert(errorMessage);
         loginBtn.innerHTML = 'Войти';
         loginBtn.disabled = false;
     }
@@ -103,46 +94,59 @@ async function registerUser() {
     const username = registerUsername.value.trim();
     const password = registerPassword.value.trim();
 
-    // Validate inputs with security module
-    const usernameValidation = window.inputValidation.validate(username, 'username');
-    const passwordValidation = window.inputValidation.validate(password, 'password');
-
-    if (!usernameValidation.valid) {
-        alert(usernameValidation.error);
+    // Basic validation first
+    if (!username || !password) {
+        alert('Пожалуйста, заполните все поля');
         return;
     }
 
-    if (!passwordValidation.valid) {
-        alert(passwordValidation.error);
+    // Simple validation without security modules for now
+    if (username.length < 3 || username.length > 30) {
+        alert('Имя пользователя должно содержать от 3 до 30 символов');
         return;
     }
 
-    // Sanitize inputs
-    const sanitizedUsername = window.inputValidation.sanitize(username, 'username');
-    const sanitizedPassword = window.inputValidation.sanitize(password, 'password');
+    if (password.length < 6) {
+        alert('Пароль должен содержать минимум 6 символов');
+        return;
+    }
+
+    // Check for English letters, numbers, underscores only
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert('Имя пользователя может содержать только английские буквы, цифры и подчеркивания');
+        return;
+    }
 
     try {
         registerBtn.innerHTML = '<div class="loading"></div>';
         registerBtn.disabled = true;
 
-        // Use secure registration
-        const result = await window.authSecurity.secureRegister({
-            username: sanitizedUsername,
-            password: sanitizedPassword
-        });
+        // Direct Firebase registration (bypass security modules for now)
+        const email = `${username}@chatbyfan.local`;
+        const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
 
-        if (!result.success) {
-            alert(result.error);
-            registerBtn.innerHTML = 'Создать аккаунт';
-            registerBtn.disabled = false;
-            return;
-        }
+        // Create user profile
+        const userProfile = {
+            uid: userCredential.user.uid,
+            username: username,
+            displayName: username,
+            email: email,
+            avatar: null,
+            createdAt: Date.now(),
+            lastSeen: Date.now(),
+            online: true,
+            securityLevel: 'standard'
+        };
+
+        await window.set(window.dbRef(window.database, `users/${userCredential.user.uid}`), userProfile);
+        await window.set(window.dbRef(window.database, `usernames/${username.toLowerCase()}`), { uid: userCredential.user.uid });
 
         // Success - user will be handled by onAuthStateChanged
 
     } catch (error) {
         console.error('Registration error:', error);
-        alert('Произошла ошибка при регистрации. Попробуйте еще раз.');
+        const errorMessage = getAuthErrorMessage(error.code);
+        alert(errorMessage);
         registerBtn.innerHTML = 'Создать аккаунт';
         registerBtn.disabled = false;
     }

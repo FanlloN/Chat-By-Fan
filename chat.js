@@ -138,35 +138,9 @@ const newChatUsername = document.getElementById('newChatUsername');
 const startNewChatBtn = document.getElementById('startNewChatBtn');
 const closeNewChatModal = document.getElementById('closeNewChatModal');
 
-// Initialize Chat with Enhanced Security
+// Initialize Chat
 function initChat() {
-    // Basic security check - ensure security core is loaded
-    if (!window.securityCore) {
-        console.error('Security core not initialized - loading fallback mode');
-        // Fallback initialization without security checks
-        loadChats();
-        loadCurrentUserInfo();
-        setupEventListeners();
-        startStorageCleanupScheduler();
-        startImageCompressionScheduler();
-        initSecurityMonitoring();
-        console.log('Chat initialized in fallback mode');
-        return;
-    }
-
     if (!window.currentUser()) return;
-
-    // Security check before initialization
-    if (!window.securityCore.validateSession()) {
-        window.securityCore.triggerSecurityAlert('INVALID_SESSION');
-        return;
-    }
-
-    // Rate limiting check
-    if (!window.securityCore.checkRateLimit('init_chat')) {
-        window.securityCore.triggerSecurityAlert('INIT_RATE_LIMIT_EXCEEDED');
-        return;
-    }
 
     loadChats();
     loadCurrentUserInfo();
@@ -178,10 +152,10 @@ function initChat() {
     // Start image compression scheduler
     startImageCompressionScheduler();
 
-    // Initialize security monitoring
+    // Initialize security monitoring (light version)
     initSecurityMonitoring();
 
-    console.log('Chat initialized with ultra security');
+    console.log('Chat initialized successfully');
 }
 
 // Load User Chats
@@ -642,22 +616,14 @@ function isMessagePartOfImageGroup(message) {
     return false;
 }
 
-// Send Message with Enhanced Security
+// Send Message
 async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || !currentChat) return;
 
-    // Security validation
-    if (!window.securityCore.validateAction('sendMessage', { text, chatId: currentChat.id })) {
-        window.securityCore.triggerSecurityAlert('MESSAGE_SEND_BLOCKED', { chatId: currentChat.id });
-        showNotification('Message blocked by security system', 'error');
-        return;
-    }
-
-    // Validate message with security
-    const validation = window.inputValidation.validateAndSanitize(text, 'message');
-    if (!validation.valid) {
-        showNotification(validation.error, 'error');
+    // Basic validation
+    if (text.length > 2000) {
+        showNotification('Сообщение слишком длинное (максимум 2000 символов)', 'error');
         return;
     }
 
@@ -1215,25 +1181,19 @@ async function handlePaste(event) {
     }
 }
 
-// Send Image Message with Enhanced Security
+// Send Image Message
 async function sendImageMessage(file) {
     if (!currentChat || !file.type.startsWith('image/')) return;
 
-    // Security validation for file upload
-    if (!window.securityCore.validateAction('uploadAvatar', { file })) {
-        window.securityCore.triggerSecurityAlert('IMAGE_UPLOAD_BLOCKED', {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type
-        });
-        showNotification('Image upload blocked by security system', 'error');
+    // Basic file validation
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showNotification('Файл слишком большой (максимум 5MB)', 'error');
         return;
     }
 
-    // Validate file with security module
-    const fileValidation = window.inputValidation.validate(file, 'file');
-    if (!fileValidation.valid) {
-        showNotification(fileValidation.error, 'error');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Неподдерживаемый формат файла', 'error');
         return;
     }
 
@@ -1415,29 +1375,8 @@ function openImageModal(imageSrc, imageName = 'image') {
     document.addEventListener('keydown', handleEscape);
 }
 
-// Download Image Function with Security
+// Download Image Function
 function downloadImage(imageSrc, imageName = 'image') {
-    // Security check for download action
-    if (!window.securityCore.checkRateLimit('image_download')) {
-        window.securityCore.triggerSecurityAlert('DOWNLOAD_RATE_LIMIT_EXCEEDED');
-        showNotification('Download blocked: too many requests', 'error');
-        return;
-    }
-
-    // Validate image source
-    if (!imageSrc || typeof imageSrc !== 'string') {
-        window.securityCore.triggerSecurityAlert('INVALID_DOWNLOAD_SOURCE', { imageSrc: imageSrc?.substring(0, 50) });
-        showNotification('Invalid image source', 'error');
-        return;
-    }
-
-    // Security analysis of the download
-    window.securityCore.analyzeBehavior('image_download', {
-        imageName,
-        sourceLength: imageSrc.length,
-        isDataUrl: imageSrc.startsWith('data:')
-    });
-
     try {
         // Create a temporary link element
         const link = document.createElement('a');
@@ -1449,15 +1388,6 @@ function downloadImage(imageSrc, imageName = 'image') {
             // Extract file extension from data URL if possible
             const mimeType = imageSrc.split(';')[0].split(':')[1];
             const extension = mimeType.split('/')[1];
-
-            // Security check for file extension
-            const allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-            if (!allowedExtensions.includes(extension)) {
-                window.securityCore.triggerSecurityAlert('SUSPICIOUS_DOWNLOAD_EXTENSION', { extension });
-                showNotification('Download blocked: invalid file type', 'error');
-                return;
-            }
-
             link.download = `image.${extension}`;
         }
 
@@ -1469,7 +1399,6 @@ function downloadImage(imageSrc, imageName = 'image') {
         showNotification('Изображение скачано!', 'success');
     } catch (error) {
         console.error('Error downloading image:', error);
-        window.securityCore.triggerSecurityAlert('DOWNLOAD_ERROR', { error: error.message });
         showNotification('Ошибка скачивания изображения', 'error');
     }
 }
@@ -1591,29 +1520,8 @@ function startImageCompressionScheduler() {
     }, 10000); // 10 seconds after startup (increased for security)
 }
 
-// Export functions with security wrapper
-window.initChat = function() {
-    if (!window.securityCore) {
-        console.error('Security core not initialized');
-        return;
-    }
-    return initChat.apply(this, arguments);
-};
-
-window.openImageModal = function() {
-    if (!window.securityCore.checkRateLimit('open_image_modal')) {
-        window.securityCore.triggerSecurityAlert('MODAL_RATE_LIMIT_EXCEEDED');
-        return;
-    }
-    return openImageModal.apply(this, arguments);
-};
-
-window.replyToMessage = function() {
-    if (!window.securityCore.checkRateLimit('reply_message')) {
-        window.securityCore.triggerSecurityAlert('REPLY_RATE_LIMIT_EXCEEDED');
-        return;
-    }
-    return replyToMessage.apply(this, arguments);
-};
-
+// Export functions
+window.initChat = initChat;
+window.openImageModal = openImageModal;
+window.replyToMessage = replyToMessage;
 window.cancelReply = cancelReply;
