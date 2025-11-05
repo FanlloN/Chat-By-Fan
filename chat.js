@@ -1,9 +1,108 @@
-// Chat Module
+// Chat Module - Ultra Secure Implementation
 let currentChat = null;
 let chats = new Map();
 let messages = new Map();
 let users = new Map();
 let replyToMessageId = null;
+
+// Anti-debugging and code protection
+(function() {
+    'use strict';
+
+    // Detect developer tools
+    let devtoolsOpen = false;
+    const threshold = 160;
+
+    const detectDevTools = () => {
+        if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
+            if (!devtoolsOpen) {
+                devtoolsOpen = true;
+                window.securityCore.triggerSecurityAlert('DEVTOOLS_DETECTED', {
+                    outerHeight: window.outerHeight,
+                    innerHeight: window.innerHeight,
+                    outerWidth: window.outerWidth,
+                    innerWidth: window.innerWidth
+                });
+            }
+        } else {
+            devtoolsOpen = false;
+        }
+    };
+
+    // Check for dev tools periodically
+    setInterval(detectDevTools, 500);
+
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        window.securityCore.triggerSecurityAlert('RIGHT_CLICK_ATTEMPT');
+        return false;
+    });
+
+    // Disable F12, Ctrl+Shift+I, Ctrl+U, etc.
+    document.addEventListener('keydown', (e) => {
+        if (
+            e.key === 'F12' ||
+            (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+            (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+            (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+            (e.ctrlKey && e.key === 'U') ||
+            (e.ctrlKey && e.key === 'S')
+        ) {
+            e.preventDefault();
+            window.securityCore.triggerSecurityAlert('KEYBOARD_SHORTCUT_BLOCKED', {
+                key: e.key,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey
+            });
+            return false;
+        }
+    });
+
+    // Detect source code viewing attempts
+    const originalToString = Function.prototype.toString;
+    Function.prototype.toString = function() {
+        window.securityCore.triggerSecurityAlert('FUNCTION_TOSTRING_ATTEMPT');
+        return originalToString.apply(this, arguments);
+    };
+
+    // Obfuscate console methods
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+
+    console.log = function(...args) {
+        window.securityCore.triggerSecurityAlert('CONSOLE_LOG_ATTEMPT', { args: args.join(' ') });
+        return originalLog.apply(console, args);
+    };
+
+    console.warn = function(...args) {
+        window.securityCore.triggerSecurityAlert('CONSOLE_WARN_ATTEMPT', { args: args.join(' ') });
+        return originalWarn.apply(console, args);
+    };
+
+    console.error = function(...args) {
+        window.securityCore.triggerSecurityAlert('CONSOLE_ERROR_ATTEMPT', { args: args.join(' ') });
+        return originalError.apply(console, args);
+    };
+
+    // Code integrity check
+    const codeIntegrityCheck = () => {
+        const currentTime = Date.now();
+        const timeDiff = currentTime - window.securityCore.initTime;
+
+        if (timeDiff > 300000) { // 5 minutes
+            if (!window.securityCore.verifyIntegrity()) {
+                window.securityCore.triggerSecurityAlert('CODE_INTEGRITY_VIOLATION');
+                // In production, this would redirect or disable functionality
+                console.warn('Code integrity check failed');
+            }
+        }
+    };
+
+    setInterval(codeIntegrityCheck, 60000); // Check every minute
+
+})();
 
 // DOM Elements
 const chatsList = document.getElementById('chatsList');
@@ -25,13 +124,36 @@ const newChatUsername = document.getElementById('newChatUsername');
 const startNewChatBtn = document.getElementById('startNewChatBtn');
 const closeNewChatModal = document.getElementById('closeNewChatModal');
 
-// Initialize Chat
+// Initialize Chat with Enhanced Security
 function initChat() {
     if (!window.currentUser()) return;
+
+    // Security check before initialization
+    if (!window.securityCore.validateSession()) {
+        window.securityCore.triggerSecurityAlert('INVALID_SESSION');
+        return;
+    }
+
+    // Rate limiting check
+    if (!window.securityCore.checkRateLimit('init_chat')) {
+        window.securityCore.triggerSecurityAlert('INIT_RATE_LIMIT_EXCEEDED');
+        return;
+    }
 
     loadChats();
     loadCurrentUserInfo();
     setupEventListeners();
+
+    // Start storage cleanup scheduler
+    startStorageCleanupScheduler();
+
+    // Start image compression scheduler
+    startImageCompressionScheduler();
+
+    // Initialize security monitoring
+    initSecurityMonitoring();
+
+    console.log('Chat initialized with ultra security');
 }
 
 // Load User Chats
@@ -310,9 +432,17 @@ function createImageGroupElement(messageGroup) {
     else if (messageGroup.length === 3) gridClass = 'image-grid-3';
     else if (messageGroup.length >= 4) gridClass = 'image-grid-4';
 
-    const imagesHtml = messageGroup.map(([messageId, messageData]) =>
-        `<img src="${messageData.image}" alt="${messageData.imageName || 'Изображение'}" class="group-image" onclick="openImageModal('${messageData.image}')">`
-    ).join('');
+    const imagesHtml = messageGroup.map(([messageId, messageData]) => {
+        const isCompressed = messageData.compressed;
+        const imageClass = isCompressed ? 'group-image compressed' : 'group-image';
+        const compressionIndicator = isCompressed ? '<div class="compression-indicator" title="Изображение сжато для экономии места">📦</div>' : '';
+
+        return `<div class="group-image-container">
+            <img src="${messageData.image}" alt="${messageData.imageName || 'Изображение'}" class="${imageClass}" onclick="openImageModal('${messageData.image}', '${messageData.imageName || 'image'}')">
+            ${compressionIndicator}
+            <button class="image-download-btn-small" onclick="downloadImage('${messageData.image}', '${messageData.imageName || 'image'}')" title="Скачать изображение">💾</button>
+        </div>`;
+    }).join('');
 
     groupDiv.innerHTML = `
         ${!isOwn ? `<div class="message-avatar"><img src="${avatarSrc}" alt="Avatar"></div>` : ''}
@@ -393,9 +523,15 @@ function createMessageElement(messageId, messageData) {
     // Handle different message types
     let messageContent = '';
     if (messageData.type === 'image' && messageData.image) {
+        const isCompressed = messageData.compressed;
+        const imageClass = isCompressed ? 'message-image compressed' : 'message-image';
+        const compressionIndicator = isCompressed ? '<div class="compression-indicator" title="Изображение сжато для экономии места">📦</div>' : '';
+
         messageContent = `
             <div class="message-image-container">
-                <img src="${messageData.image}" alt="${messageData.imageName || 'Изображение'}" class="message-image" onclick="openImageModal('${messageData.image}')">
+                <img src="${messageData.image}" alt="${messageData.imageName || 'Изображение'}" class="${imageClass}" onclick="openImageModal('${messageData.image}', '${messageData.imageName || 'image'}')">
+                ${compressionIndicator}
+                <button class="image-download-btn-small" onclick="downloadImage('${messageData.image}', '${messageData.imageName || 'image'}')" title="Скачать изображение">💾</button>
             </div>
         `;
     } else if (messageData.type === 'clear_chat_request') {
@@ -478,10 +614,17 @@ function isMessagePartOfImageGroup(message) {
     return false;
 }
 
-// Send Message
+// Send Message with Enhanced Security
 async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || !currentChat) return;
+
+    // Security validation
+    if (!window.securityCore.validateAction('sendMessage', { text, chatId: currentChat.id })) {
+        window.securityCore.triggerSecurityAlert('MESSAGE_SEND_BLOCKED', { chatId: currentChat.id });
+        showNotification('Message blocked by security system', 'error');
+        return;
+    }
 
     // Validate message with security
     const validation = window.inputValidation.validateAndSanitize(text, 'message');
@@ -1044,9 +1187,20 @@ async function handlePaste(event) {
     }
 }
 
-// Send Image Message
+// Send Image Message with Enhanced Security
 async function sendImageMessage(file) {
     if (!currentChat || !file.type.startsWith('image/')) return;
+
+    // Security validation for file upload
+    if (!window.securityCore.validateAction('uploadAvatar', { file })) {
+        window.securityCore.triggerSecurityAlert('IMAGE_UPLOAD_BLOCKED', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type
+        });
+        showNotification('Image upload blocked by security system', 'error');
+        return;
+    }
 
     // Validate file with security module
     const fileValidation = window.inputValidation.validate(file, 'file');
@@ -1110,14 +1264,108 @@ function fileToBase64(file) {
     });
 }
 
+// Compress image to maximum 1KB
+function compressImageTo1KB(base64Image) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Start with very small dimensions and increase until we get close to 1KB
+            let width = 32;
+            let height = (img.height / img.width) * width;
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Try different quality levels and sizes to get under 1KB
+            let quality = 0.9;
+            let compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+
+            // Reduce size until under 1KB
+            while (compressedBase64.length > 1333 && width > 16) { // 1333 is roughly 1KB in base64
+                width = Math.max(16, width - 4);
+                height = (img.height / img.width) * width;
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+
+                // Also reduce quality if size is still too big
+                if (compressedBase64.length > 1333 && quality > 0.1) {
+                    quality -= 0.1;
+                    compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                }
+            }
+
+            resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = base64Image;
+    });
+}
+
+// Compress old images in a chat
+async function compressOldImages(chatId) {
+    try {
+        const messagesRef = window.dbRef(window.database, `messages/${chatId}`);
+        const snapshot = await window.get(messagesRef);
+        const messages = snapshot.val() || {};
+
+        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000); // 1 day in milliseconds
+        const compressionPromises = [];
+
+        for (const [messageId, messageData] of Object.entries(messages)) {
+            if (messageData.type === 'image' &&
+                messageData.timestamp < oneDayAgo &&
+                messageData.image &&
+                !messageData.compressed) { // Only compress if not already compressed
+
+                const compressPromise = (async () => {
+                    try {
+                        const compressedImage = await compressImageTo1KB(messageData.image);
+                        await window.update(window.dbRef(window.database, `messages/${chatId}/${messageId}`), {
+                            image: compressedImage,
+                            compressed: true,
+                            originalSize: messageData.image.length,
+                            compressedAt: Date.now()
+                        });
+                    } catch (error) {
+                        console.error('Error compressing image:', error);
+                    }
+                })();
+
+                compressionPromises.push(compressPromise);
+            }
+        }
+
+        await Promise.all(compressionPromises);
+        console.log(`Compressed ${compressionPromises.length} old images in chat ${chatId}`);
+    } catch (error) {
+        console.error('Error compressing old images:', error);
+    }
+}
+
 // Open Image Modal
-function openImageModal(imageSrc) {
+function openImageModal(imageSrc, imageName = 'image') {
     const modal = document.getElementById('imageModal');
     const fullSizeImage = document.getElementById('fullSizeImage');
     const closeBtn = document.getElementById('closeImageModal');
 
     fullSizeImage.src = imageSrc;
     modal.style.display = 'flex';
+
+    // Add download button to modal
+    let downloadBtn = modal.querySelector('.image-download-btn');
+    if (!downloadBtn) {
+        downloadBtn = document.createElement('button');
+        downloadBtn.className = 'image-download-btn';
+        downloadBtn.innerHTML = '💾 Скачать';
+        downloadBtn.onclick = () => downloadImage(imageSrc, imageName);
+        modal.querySelector('.modal-body').appendChild(downloadBtn);
+    }
 
     // Close modal functionality
     const closeModal = () => {
@@ -1139,6 +1387,65 @@ function openImageModal(imageSrc) {
     document.addEventListener('keydown', handleEscape);
 }
 
+// Download Image Function with Security
+function downloadImage(imageSrc, imageName = 'image') {
+    // Security check for download action
+    if (!window.securityCore.checkRateLimit('image_download')) {
+        window.securityCore.triggerSecurityAlert('DOWNLOAD_RATE_LIMIT_EXCEEDED');
+        showNotification('Download blocked: too many requests', 'error');
+        return;
+    }
+
+    // Validate image source
+    if (!imageSrc || typeof imageSrc !== 'string') {
+        window.securityCore.triggerSecurityAlert('INVALID_DOWNLOAD_SOURCE', { imageSrc: imageSrc?.substring(0, 50) });
+        showNotification('Invalid image source', 'error');
+        return;
+    }
+
+    // Security analysis of the download
+    window.securityCore.analyzeBehavior('image_download', {
+        imageName,
+        sourceLength: imageSrc.length,
+        isDataUrl: imageSrc.startsWith('data:')
+    });
+
+    try {
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.href = imageSrc;
+        link.download = imageName || 'downloaded_image';
+
+        // If it's a data URL, we can download it directly
+        if (imageSrc.startsWith('data:')) {
+            // Extract file extension from data URL if possible
+            const mimeType = imageSrc.split(';')[0].split(':')[1];
+            const extension = mimeType.split('/')[1];
+
+            // Security check for file extension
+            const allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
+            if (!allowedExtensions.includes(extension)) {
+                window.securityCore.triggerSecurityAlert('SUSPICIOUS_DOWNLOAD_EXTENSION', { extension });
+                showNotification('Download blocked: invalid file type', 'error');
+                return;
+            }
+
+            link.download = `image.${extension}`;
+        }
+
+        // Append to body, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showNotification('Изображение скачано!', 'success');
+    } catch (error) {
+        console.error('Error downloading image:', error);
+        window.securityCore.triggerSecurityAlert('DOWNLOAD_ERROR', { error: error.message });
+        showNotification('Ошибка скачивания изображения', 'error');
+    }
+}
+
 // Reply to Message
 function replyToMessage(messageId) {
     replyToMessageId = messageId;
@@ -1152,8 +1459,133 @@ function cancelReply() {
     updateReplyInput();
 }
 
-// Export functions
-window.initChat = initChat;
-window.openImageModal = openImageModal;
-window.replyToMessage = replyToMessage;
+// Initialize Security Monitoring
+function initSecurityMonitoring() {
+    // Monitor for suspicious DOM manipulation
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tagName = node.tagName.toLowerCase();
+                        if (tagName === 'script' || tagName === 'iframe' || tagName === 'object') {
+                            window.securityCore.triggerSecurityAlert('SUSPICIOUS_DOM_MANIPULATION', {
+                                tagName,
+                                nodeType: node.nodeType
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Monitor network requests
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        window.securityCore.analyzeBehavior('network_request', { url: args[0] });
+        return originalFetch.apply(this, args);
+    };
+
+    // Monitor XMLHttpRequest
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+        window.securityCore.analyzeBehavior('xhr_request', { method, url });
+        return originalOpen.apply(this, arguments);
+    };
+}
+
+// Start Image Compression Scheduler with Security
+function startImageCompressionScheduler() {
+    // Security check before compression
+    if (!window.securityCore.checkRateLimit('compression_scheduler')) {
+        window.securityCore.triggerSecurityAlert('COMPRESSION_RATE_LIMIT_EXCEEDED');
+        return;
+    }
+
+    // Run compression check every hour
+    setInterval(async () => {
+        if (!window.currentUser()) return;
+
+        // Additional security validation
+        if (!window.securityCore.validateSession()) {
+            window.securityCore.triggerSecurityAlert('INVALID_SESSION_COMPRESSION');
+            return;
+        }
+
+        try {
+            const userId = window.currentUser().uid;
+            const userChatsRef = window.dbRef(window.database, `userChats/${userId}`);
+            const snapshot = await window.get(userChatsRef);
+            const userChats = snapshot.val() || {};
+
+            // Compress images in all user chats (excluding global chat)
+            const compressionPromises = Object.keys(userChats)
+                .filter(chatId => chatId !== 'global_chat')
+                .map(chatId => compressOldImages(chatId));
+
+            await Promise.all(compressionPromises);
+        } catch (error) {
+            console.error('Error in image compression scheduler:', error);
+            window.securityCore.triggerSecurityAlert('COMPRESSION_ERROR', { error: error.message });
+        }
+    }, 60 * 60 * 1000); // Every hour
+
+    // Also run immediately on startup with security delay
+    setTimeout(async () => {
+        if (!window.currentUser()) return;
+
+        if (!window.securityCore.validateSession()) {
+            window.securityCore.triggerSecurityAlert('INVALID_SESSION_INITIAL_COMPRESSION');
+            return;
+        }
+
+        try {
+            const userId = window.currentUser().uid;
+            const userChatsRef = window.dbRef(window.database, `userChats/${userId}`);
+            const snapshot = await window.get(userChatsRef);
+            const userChats = snapshot.val() || {};
+
+            const compressionPromises = Object.keys(userChats)
+                .filter(chatId => chatId !== 'global_chat')
+                .map(chatId => compressOldImages(chatId));
+
+            await Promise.all(compressionPromises);
+        } catch (error) {
+            console.error('Error in initial image compression:', error);
+            window.securityCore.triggerSecurityAlert('INITIAL_COMPRESSION_ERROR', { error: error.message });
+        }
+    }, 10000); // 10 seconds after startup (increased for security)
+}
+
+// Export functions with security wrapper
+window.initChat = function() {
+    if (!window.securityCore) {
+        console.error('Security core not initialized');
+        return;
+    }
+    return initChat.apply(this, arguments);
+};
+
+window.openImageModal = function() {
+    if (!window.securityCore.checkRateLimit('open_image_modal')) {
+        window.securityCore.triggerSecurityAlert('MODAL_RATE_LIMIT_EXCEEDED');
+        return;
+    }
+    return openImageModal.apply(this, arguments);
+};
+
+window.replyToMessage = function() {
+    if (!window.securityCore.checkRateLimit('reply_message')) {
+        window.securityCore.triggerSecurityAlert('REPLY_RATE_LIMIT_EXCEEDED');
+        return;
+    }
+    return replyToMessage.apply(this, arguments);
+};
+
 window.cancelReply = cancelReply;
