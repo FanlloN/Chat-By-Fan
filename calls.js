@@ -66,33 +66,10 @@ function setupCallEventListeners() {
     }
 }
 
-// Load available camera and microphone devices
+// Load available devices (simplified for now)
 async function loadAvailableDevices() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-
-        // Clear existing options
-        if (cameraSelect) cameraSelect.innerHTML = '<option value="">Выберите камеру</option>';
-        if (micSelect) micSelect.innerHTML = '<option value="">Выберите микрофон</option>';
-
-        // Populate camera options
-        devices.filter(device => device.kind === 'videoinput').forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.textContent = device.label || `Камера ${device.deviceId.slice(0, 8)}`;
-            if (cameraSelect) cameraSelect.appendChild(option);
-        });
-
-        // Populate microphone options
-        devices.filter(device => device.kind === 'audioinput').forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.textContent = device.label || `Микрофон ${device.deviceId.slice(0, 8)}`;
-            if (micSelect) micSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading devices:', error);
-    }
+    // Device loading disabled for now to prevent hangs
+    return;
 }
 
 // Start a call
@@ -143,25 +120,22 @@ async function startCall() {
 // Initialize WebRTC call
 async function initializeCall() {
     try {
-        // Get user media
+        // Get user media (audio only for now)
         localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: false, // Disabled for now
             audio: true
         });
 
-        // Set local video
-        localVideo.srcObject = localStream;
-        callPlaceholder.style.display = 'none';
-        localVideo.style.display = 'block';
+        // Set local video (placeholder for now)
+        callPlaceholder.style.display = 'flex';
+        localVideo.style.display = 'none';
 
-        // Initialize controls state
-        cameraBtn.classList.add('active');
-        cameraBtn.innerHTML = '<span class="control-icon">📹</span>';
-        cameraSelect.style.display = 'block';
-
+        // Initialize controls state (simplified)
+        cameraBtn.style.display = 'none'; // Hide camera controls
         micBtn.classList.remove('muted');
         micBtn.innerHTML = '<span class="control-icon">🎤</span>';
-        micSelect.style.display = 'block';
+        micSelect.style.display = 'none'; // Hide mic selector for now
+        screenShareBtn.style.display = 'none'; // Hide screen share
 
         // Create peer connection
         peerConnection = new RTCPeerConnection(rtcConfiguration);
@@ -343,18 +317,16 @@ async function acceptCall(data) {
             audio: true
         });
 
-        localVideo.srcObject = localStream;
-        callPlaceholder.style.display = 'none';
-        localVideo.style.display = 'block';
+        // No video for now, just audio
+        callPlaceholder.style.display = 'flex';
+        localVideo.style.display = 'none';
 
-        // Initialize controls state
-        cameraBtn.classList.add('active');
-        cameraBtn.innerHTML = '<span class="control-icon">📹</span>';
-        cameraSelect.style.display = 'block';
-
+        // Initialize controls state (simplified)
+        cameraBtn.style.display = 'none'; // Hide camera controls
         micBtn.classList.remove('muted');
         micBtn.innerHTML = '<span class="control-icon">🎤</span>';
-        micSelect.style.display = 'block';
+        micSelect.style.display = 'none'; // Hide mic selector for now
+        screenShareBtn.style.display = 'none'; // Hide screen share
 
         // Create peer connection
         peerConnection = new RTCPeerConnection(rtcConfiguration);
@@ -420,25 +392,10 @@ async function acceptCall(data) {
     }
 }
 
-// Toggle camera on/off
+// Toggle camera on/off (disabled for now)
 async function toggleCamera() {
-    if (!localStream) return;
-
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        cameraBtn.classList.toggle('active', videoTrack.enabled);
-
-        if (videoTrack.enabled) {
-            cameraBtn.innerHTML = '<span class="control-icon">📹</span>';
-            // Show device selector
-            cameraSelect.style.display = 'block';
-        } else {
-            cameraBtn.innerHTML = '<span class="control-icon">📷</span>';
-            // Hide device selector
-            cameraSelect.style.display = 'none';
-        }
-    }
+    // Camera functionality disabled
+    return;
 }
 
 // Toggle microphone on/off
@@ -452,114 +409,28 @@ async function toggleMicrophone() {
 
         if (audioTrack.enabled) {
             micBtn.innerHTML = '<span class="control-icon">🎤</span>';
-            // Show device selector
-            micSelect.style.display = 'block';
         } else {
             micBtn.innerHTML = '<span class="control-icon">🔇</span>';
-            // Hide device selector
-            micSelect.style.display = 'none';
         }
     }
 }
 
-// Toggle screen sharing
+// Toggle screen sharing (disabled for now)
 async function toggleScreenShare() {
-    try {
-        if (!localStream) return;
-
-        const screenTrack = localStream.getVideoTracks().find(track => track.label.includes('screen'));
-        if (screenTrack) {
-            // Stop screen sharing
-            screenTrack.stop();
-            // Switch back to camera
-            const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const cameraTrack = cameraStream.getVideoTracks()[0];
-            const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-            if (sender) {
-                await sender.replaceTrack(cameraTrack);
-            }
-            localStream.removeTrack(screenTrack);
-            localStream.addTrack(cameraTrack);
-            localVideo.srcObject = localStream;
-            screenShareBtn.classList.remove('active');
-            screenShareBtn.innerHTML = '<span class="control-icon">🖥️</span>';
-        } else {
-            // Start screen sharing
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            const screenVideoTrack = screenStream.getVideoTracks()[0];
-            const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-            if (sender) {
-                await sender.replaceTrack(screenVideoTrack);
-            }
-            localStream.getVideoTracks()[0].stop();
-            localStream.removeTrack(localStream.getVideoTracks()[0]);
-            localStream.addTrack(screenVideoTrack);
-            localVideo.srcObject = localStream;
-            screenShareBtn.classList.add('active');
-            screenShareBtn.innerHTML = '<span class="control-icon">🖥️</span>';
-
-            // Handle screen sharing stop
-            screenVideoTrack.onended = () => {
-                toggleScreenShare();
-            };
-        }
-    } catch (error) {
-        console.error('Error toggling screen share:', error);
-        showNotification('Ошибка демонстрации экрана', 'error');
-    }
+    // Screen sharing functionality disabled
+    return;
 }
 
-// Switch camera device
+// Switch camera device (disabled for now)
 async function switchCamera() {
-    if (!cameraSelect.value || !localStream) return;
-
-    try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: cameraSelect.value } },
-            audio: false
-        });
-
-        const newVideoTrack = newStream.getVideoTracks()[0];
-        const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-        if (sender) {
-            await sender.replaceTrack(newVideoTrack);
-        }
-
-        localStream.getVideoTracks()[0].stop();
-        localStream.removeTrack(localStream.getVideoTracks()[0]);
-        localStream.addTrack(newVideoTrack);
-        localVideo.srcObject = localStream;
-
-    } catch (error) {
-        console.error('Error switching camera:', error);
-        showNotification('Ошибка переключения камеры', 'error');
-    }
+    // Camera switching disabled
+    return;
 }
 
-// Switch microphone device
+// Switch microphone device (disabled for now)
 async function switchMicrophone() {
-    if (!micSelect.value || !localStream) return;
-
-    try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-            video: false,
-            audio: { deviceId: { exact: micSelect.value } }
-        });
-
-        const newAudioTrack = newStream.getAudioTracks()[0];
-        const sender = peerConnection.getSenders().find(s => s.track.kind === 'audio');
-        if (sender) {
-            await sender.replaceTrack(newAudioTrack);
-        }
-
-        localStream.getAudioTracks()[0].stop();
-        localStream.removeTrack(localStream.getAudioTracks()[0]);
-        localStream.addTrack(newAudioTrack);
-
-    } catch (error) {
-        console.error('Error switching microphone:', error);
-        showNotification('Ошибка переключения микрофона', 'error');
-    }
+    // Microphone switching disabled
+    return;
 }
 
 // Update call status display
@@ -624,19 +495,9 @@ function endCall() {
     callPlaceholder.style.display = 'flex';
 
     // Reset control buttons
-    if (cameraBtn) {
-        cameraBtn.classList.remove('active');
-        cameraBtn.innerHTML = '<span class="control-icon">📹</span>';
-        cameraSelect.style.display = 'none';
-    }
     if (micBtn) {
         micBtn.classList.remove('muted');
         micBtn.innerHTML = '<span class="control-icon">🎤</span>';
-        micSelect.style.display = 'none';
-    }
-    if (screenShareBtn) {
-        screenShareBtn.classList.remove('active');
-        screenShareBtn.innerHTML = '<span class="control-icon">🖥️</span>';
     }
 
     currentCall = null;
