@@ -665,18 +665,8 @@ async function startNewChat() {
     }
 
     try {
-        // Find user by username
-        const usersRef = window.dbRef(window.database, 'users');
-        const snapshot = await window.get(usersRef);
-        const usersData = snapshot.val();
-
-        let targetUserId = null;
-        for (const [userId, userData] of Object.entries(usersData || {})) {
-            if (userData.username === username || userData.displayName === username) {
-                targetUserId = userId;
-                break;
-            }
-        }
+        // Find user by username (case-insensitive)
+        const targetUserId = await findUserByUsername(username);
 
         if (!targetUserId) {
             showNotification('Пользователь не найден', 'error');
@@ -1657,6 +1647,9 @@ async function createGroupChat() {
             }
         }
 
+        // Ensure participants array contains valid user IDs (strings)
+        participants = participants.filter(id => id && typeof id === 'string');
+
         // Create group chat
         const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const groupData = {
@@ -1699,8 +1692,14 @@ async function findUserByUsername(username) {
         const snapshot = await window.get(usersRef);
         const usersData = snapshot.val() || {};
 
+        // Case-insensitive search
+        const searchUsername = username.toLowerCase().trim();
+
         for (const [userId, userData] of Object.entries(usersData)) {
-            if (userData.username === username || userData.displayName === username) {
+            const userUsername = (userData.username || '').toLowerCase();
+            const userDisplayName = (userData.displayName || '').toLowerCase();
+
+            if (userUsername === searchUsername || userDisplayName === searchUsername) {
                 return userId;
             }
         }

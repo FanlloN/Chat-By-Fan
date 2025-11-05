@@ -50,7 +50,7 @@ function showApp() {
 
 // Login User
 async function loginUser() {
-    const username = loginUsername.value.trim().toLowerCase();
+    const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
     // Basic validation first
@@ -74,8 +74,20 @@ async function loginUser() {
         loginBtn.innerHTML = '<div class="loading"></div>';
         loginBtn.disabled = true;
 
+        // Find the correct email by checking usernames (case-insensitive)
+        const usernameLower = username.toLowerCase();
+        const usernameRef = window.dbRef(window.database, `usernames/${usernameLower}`);
+        const usernameSnapshot = await window.get(usernameRef);
+
+        if (!usernameSnapshot.exists()) {
+            alert('Пользователь с таким никнеймом не найден');
+            loginBtn.innerHTML = 'Войти';
+            loginBtn.disabled = false;
+            return;
+        }
+
         // Direct Firebase login (bypass security modules for now)
-        const email = `${username}@chatbyfan.local`;
+        const email = `${usernameLower}@chatbyfan.local`;
         const userCredential = await window.signInWithEmailAndPassword(window.auth, email, password);
 
         // Success - user will be handled by onAuthStateChanged
@@ -121,14 +133,26 @@ async function registerUser() {
         registerBtn.innerHTML = '<div class="loading"></div>';
         registerBtn.disabled = true;
 
+        // Check if username already exists (case-insensitive)
+        const usernameLower = username.toLowerCase();
+        const existingUsernameRef = window.dbRef(window.database, `usernames/${usernameLower}`);
+        const existingSnapshot = await window.get(existingUsernameRef);
+
+        if (existingSnapshot.exists()) {
+            alert('Это имя пользователя уже занято. Попробуйте другое.');
+            registerBtn.innerHTML = 'Создать аккаунт';
+            registerBtn.disabled = false;
+            return;
+        }
+
         // Direct Firebase registration (bypass security modules for now)
-        const email = `${username}@chatbyfan.local`;
+        const email = `${usernameLower}@chatbyfan.local`;
         const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
 
         // Create user profile
         const userProfile = {
             uid: userCredential.user.uid,
-            username: username,
+            username: username, // Keep original case for display
             displayName: username,
             email: email,
             avatar: null,
@@ -139,7 +163,7 @@ async function registerUser() {
         };
 
         await window.set(window.dbRef(window.database, `users/${userCredential.user.uid}`), userProfile);
-        await window.set(window.dbRef(window.database, `usernames/${username.toLowerCase()}`), { uid: userCredential.user.uid });
+        await window.set(window.dbRef(window.database, `usernames/${usernameLower}`), { uid: userCredential.user.uid });
 
         // Success - user will be handled by onAuthStateChanged
 
