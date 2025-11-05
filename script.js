@@ -17,12 +17,13 @@ window.setTimeout = null;
 window.setInterval = null;
 
 // Security: Disable console methods in production to prevent information leakage
-if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    const methods = ['log', 'debug', 'info', 'warn', 'error', 'table', 'trace'];
-    methods.forEach(method => {
-        console[method] = () => {};
-    });
-}
+// Temporarily disabled for debugging
+// if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+//     const methods = ['log', 'debug', 'info', 'warn', 'error', 'table', 'trace'];
+//     methods.forEach(method => {
+//         console[method] = () => {};
+//     });
+// }
 
 // Security: Obfuscate sensitive data in memory
 function secureData(data) {
@@ -72,7 +73,7 @@ if (window.location.hostname !== 'localhost' && window.location.hostname !== '12
 }
 
 // Security: Rate limiting for API calls
-const rateLimitMap = new Map();
+let rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_REQUESTS = 100;
 

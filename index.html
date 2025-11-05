@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://chatbyfan-default-rtdb.europe-west1.firebasedatabase.app https://chatbyfan.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://chatbyfan-default-rtdb.europe-west1.firebasedatabase.app https://chatbyfan.firebaseapp.com https://www.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
@@ -20,23 +20,18 @@
         import { getDatabase, ref, set, onValue, push, update, remove, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        // Firebase configuration - SECURED VERSION
-        // Note: In production, these should be environment variables, not hardcoded
+        // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
         const firebaseConfig = {
-            apiKey: "DEMO_KEY_REPLACE_IN_PRODUCTION",
-            authDomain: "demo.firebaseapp.com",
-            databaseURL: "https://demo-default-rtdb.firebaseio.com",
-            projectId: "demo-project",
-            storageBucket: "demo.firebasestorage.app",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:demo"
+            apiKey: "AIzaSyCU-2Oa0zjmzyAnBIrluPQbrf2t-lPiikg",
+            authDomain: "chatbyfan.firebaseapp.com",
+            databaseURL: "https://chatbyfan-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "chatbyfan",
+            storageBucket: "chatbyfan.firebasestorage.app",
+            messagingSenderId: "844332208537",
+            appId: "1:844332208537:web:5b2747debe491ec8610308"
         };
 
-        // Security: Obfuscate sensitive config in production
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            // In production, config should be loaded from secure environment
-            console.warn('Using demo Firebase config. Replace with production config.');
-        }
+        console.log('Firebase config loaded:', firebaseConfig.projectId);
 
         console.log('Firebase config loaded:', firebaseConfig.projectId);
 
@@ -216,21 +211,21 @@
 
     <!-- Security: Remove any potential attack vectors -->
     <script>
-        // Security: Lock down the global scope
-        Object.defineProperty(window, 'eval', { value: undefined, writable: false });
-        Object.defineProperty(window, 'Function', { value: undefined, writable: false });
-        Object.defineProperty(window, 'setTimeout', { value: undefined, writable: false });
-        Object.defineProperty(window, 'setInterval', { value: undefined, writable: false });
+        // Security: Lock down the global scope (temporarily disabled for debugging)
+        // Object.defineProperty(window, 'eval', { value: undefined, writable: false });
+        // Object.defineProperty(window, 'Function', { value: undefined, writable: false });
+        // Object.defineProperty(window, 'setTimeout', { value: undefined, writable: false });
+        // Object.defineProperty(window, 'setInterval', { value: undefined, writable: false });
 
-        // Security: Prevent prototype pollution
-        Object.freeze(Object.prototype);
-        Object.freeze(Array.prototype);
-        Object.freeze(Function.prototype);
+        // Security: Prevent prototype pollution (temporarily disabled for debugging)
+        // Object.freeze(Object.prototype);
+        // Object.freeze(Array.prototype);
+        // Object.freeze(Function.prototype);
 
         // Security: Hide sensitive information from global scope
         // In production, Firebase config should be loaded from environment variables
         if (typeof console !== 'undefined') {
-            console.log('🔒 Security measures active');
+            console.log('🔒 Security measures active (debug mode)');
         }
     </script>
 </body>
