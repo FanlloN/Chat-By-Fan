@@ -50,7 +50,7 @@ function showApp() {
 
 // Login User
 async function loginUser() {
-    const username = loginUsername.value.trim();
+    const username = loginUsername.value.trim().toLowerCase();
     const password = loginPassword.value.trim();
 
     if (!username || !password) {
@@ -82,27 +82,27 @@ async function loginUser() {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-login-credentials') {
             console.log('User not found, attempting auto-registration...');
 
-            // Check if username is already taken
-            const usernameCheckRef = window.dbRef(window.database, `usernames/${username}`);
+            // Check if username is already taken (case-insensitive)
+            const usernameCheckRef = window.dbRef(window.database, `usernames/${username.toLowerCase()}`);
             const usernameSnapshot = await window.get(usernameCheckRef);
-
+    
             if (usernameSnapshot.exists()) {
                 alert('Этот никнейм уже занят. Пожалуйста, выберите другой.');
                 loginBtn.innerHTML = 'Войти';
                 loginBtn.disabled = false;
                 return;
             }
-
+    
             try {
                 // Create the account automatically
                 const userCredential = await window.createUserWithEmailAndPassword(window.auth, email, password);
                 const user = userCredential.user;
                 console.log('Auto-registration successful for user:', user.uid);
-
+    
                 // Save user profile to database
                 await window.set(window.dbRef(window.database, `users/${user.uid}`), {
                     uid: user.uid,
-                    username: username,
+                    username: username.toLowerCase(),
                     email: email,
                     displayName: username,
                     avatar: null,
@@ -110,9 +110,9 @@ async function loginUser() {
                     lastSeen: Date.now(),
                     online: true
                 });
-
-                // Reserve the username
-                await window.set(window.dbRef(window.database, `usernames/${username}`), { uid: user.uid });
+    
+                // Reserve the username (case-insensitive)
+                await window.set(window.dbRef(window.database, `usernames/${username.toLowerCase()}`), { uid: user.uid });
 
                 // Force refresh auth state
                 await window.auth.currentUser.reload();
@@ -177,8 +177,8 @@ async function registerUser() {
         registerBtn.innerHTML = '<div class="loading"></div>';
         registerBtn.disabled = true;
 
-        // Check if username is already taken
-        const usernameCheckRef = window.dbRef(window.database, `usernames/${username}`);
+        // Check if username is already taken (case-insensitive)
+        const usernameCheckRef = window.dbRef(window.database, `usernames/${username.toLowerCase()}`);
         const usernameSnapshot = await window.get(usernameCheckRef);
 
         if (usernameSnapshot.exists()) {
@@ -189,7 +189,7 @@ async function registerUser() {
         }
 
         // Generate a unique email for Firebase Auth (since we use username for login)
-        const uniqueEmail = `${username}@chatbyfan.local`;
+        const uniqueEmail = `${username.toLowerCase()}@chatbyfan.local`;
         console.log('Attempting registration with email:', uniqueEmail);
 
         // Create user account
@@ -200,7 +200,7 @@ async function registerUser() {
         // Save user profile to database
         await window.set(window.dbRef(window.database, `users/${user.uid}`), {
             uid: user.uid,
-            username: username,
+            username: username.toLowerCase(),
             email: uniqueEmail,
             displayName: username,
             avatar: null,
@@ -209,7 +209,7 @@ async function registerUser() {
             online: true
         });
 
-        // Reserve the username
+        // Reserve the username (case-insensitive)
         await window.set(usernameCheckRef, { uid: user.uid });
 
         // User will be handled by onAuthStateChanged
