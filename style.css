@@ -1093,6 +1093,31 @@ body.dark-theme .modal-header {
     color: var(--text);
 }
 
+.logout-item {
+    border: 1px solid var(--error);
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius);
+}
+
+.logout-btn {
+    background: var(--error);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.logout-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 .settings-item {
     display: flex;
     align-items: center;

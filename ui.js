@@ -186,6 +186,7 @@ function setupSettingsModal() {
     // Privacy settings
     const notificationsToggle = document.getElementById('notificationsToggle');
     const callsToggle = document.getElementById('callsToggle');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     notificationsToggle.addEventListener('change', () => {
         const enabled = notificationsToggle.checked;
@@ -198,6 +199,28 @@ function setupSettingsModal() {
     callsToggle.addEventListener('change', () => {
         const enabled = callsToggle.checked;
         localStorage.setItem('callsEnabled', enabled);
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (confirm('Вы точно хотите выйти из аккаунта?')) {
+            modal.style.display = 'none';
+            window.logoutUser().then(() => {
+                // Force redirect to auth screen
+                const authScreen = document.getElementById('authScreen');
+                const app = document.getElementById('app');
+                if (authScreen && app) {
+                    authScreen.style.display = 'flex';
+                    app.style.display = 'none';
+                }
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                showNotification('Ошибка при выходе', 'error');
+            });
+        }
     });
 }
 
@@ -235,15 +258,21 @@ function setTheme(theme) {
 // Set Avatar Emoji
 function setAvatarEmoji(emoji) {
     const userAvatar = document.getElementById('userAvatar');
-    userAvatar.src = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" font-size="60" text-anchor="middle">${emoji}</text></svg>`)}`;
+    const emojiData = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" font-size="60" text-anchor="middle">${emoji}</text></svg>`)}`;
+
+    userAvatar.src = emojiData;
 
     // Save to localStorage and database
-    const emojiData = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" font-size="60" text-anchor="middle">${emoji}</text></svg>`)}`;
     localStorage.setItem('userAvatar', emojiData);
 
     if (window.currentUser()) {
         window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
             avatar: emojiData
+        }).then(() => {
+            showNotification('Аватар обновлен!', 'success');
+        }).catch((error) => {
+            console.error('Error updating avatar:', error);
+            showNotification('Ошибка обновления аватара', 'error');
         });
     }
 }
