@@ -1,3 +1,1 @@
-Open FansChat: https://fanllon.github.io/FansChat/
-
-
+just open this page: https://fanllon.github.io/Chat-By-Fan/
