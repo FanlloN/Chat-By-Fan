@@ -1628,27 +1628,31 @@ async function createGroupChat() {
         const pendingMembers = [];
 
         // Collect participants
+        const tempParticipants = [];
         memberItems.forEach(item => {
             if (item.classList.contains('pending-member')) {
                 pendingMembers.push(item.dataset.username);
             } else {
-                participants.push(item.dataset.userId);
+                const userId = item.dataset.userId;
+                if (userId && typeof userId === 'string' && userId.trim() !== '') {
+                    tempParticipants.push(userId);
+                }
             }
         });
 
         // Validate pending members exist
         for (const username of pendingMembers) {
             const userId = await findUserByUsername(username);
-            if (userId) {
-                participants.push(userId);
+            if (userId && typeof userId === 'string') {
+                tempParticipants.push(userId);
             } else {
                 showNotification(`Пользователь ${username} не найден`, 'error');
                 return;
             }
         }
 
-        // Ensure participants array contains valid user IDs (strings)
-        participants = participants.filter(id => id && typeof id === 'string');
+        // Ensure participants array contains valid user IDs (strings) and remove duplicates
+        participants = [...new Set(tempParticipants.filter(id => id && typeof id === 'string' && id.trim() !== ''))];
 
         // Create group chat
         const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
