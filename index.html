@@ -214,26 +214,47 @@
         </div>
     </div>
 
+    <!-- SCRIPTS LOADED IN CORRECT ORDER -->
+    <script>
+        console.log('=== LOADING SCRIPTS ===');
+    </script>
     <script src="script.js"></script>
+    <script>
+        console.log('script.js loaded');
+    </script>
     <script src="auth.js"></script>
+    <script>
+        console.log('auth.js loaded');
+    </script>
     <script src="chat.js"></script>
+    <script>
+        console.log('chat.js loaded');
+    </script>
     <script src="ui.js"></script>
+    <script>
+        console.log('ui.js loaded');
+        console.log('=== ALL SCRIPTS LOADED ===');
+    </script>
 
     <!-- Emergency test buttons -->
     <script>
         // Add test buttons to page
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚨 Adding emergency test buttons...');
             const testDiv = document.createElement('div');
             testDiv.innerHTML = `
-                <div style="position: fixed; top: 10px; left: 10px; z-index: 9999; background: yellow; padding: 10px; border: 2px solid red;">
-                    <button onclick="console.log('EMERGENCY: Login test'); document.getElementById('loginBtn')?.click();">TEST LOGIN</button>
-                    <button onclick="console.log('EMERGENCY: Register test'); document.getElementById('registerBtn')?.click();">TEST REGISTER</button>
-                    <button onclick="console.log('EMERGENCY: FAQ test'); document.getElementById('faqBtn')?.click();">TEST FAQ</button>
-                    <button onclick="console.log('EMERGENCY: Auth init'); window.initAuth?.();">TEST AUTH INIT</button>
-                    <button onclick="console.log('EMERGENCY: UI init'); window.initUI?.();">TEST UI INIT</button>
+                <div style="position: fixed; top: 10px; left: 10px; z-index: 9999; background: yellow; padding: 10px; border: 2px solid red; font-family: monospace; font-size: 12px;">
+                    <div style="margin-bottom: 5px; font-weight: bold;">EMERGENCY TESTS:</div>
+                    <button onclick="console.log('🚨 EMERGENCY: Login test'); const btn = document.getElementById('loginBtn'); if(btn){console.log('Found loginBtn, clicking...'); btn.click();}else{console.error('loginBtn not found!');}">TEST LOGIN</button>
+                    <button onclick="console.log('🚨 EMERGENCY: Register test'); const btn = document.getElementById('registerBtn'); if(btn){console.log('Found registerBtn, clicking...'); btn.click();}else{console.error('registerBtn not found!');}">TEST REGISTER</button>
+                    <button onclick="console.log('🚨 EMERGENCY: FAQ test'); const btn = document.getElementById('faqBtn'); if(btn){console.log('Found faqBtn, clicking...'); btn.click();}else{console.error('faqBtn not found!');}">TEST FAQ</button>
+                    <button onclick="console.log('🚨 EMERGENCY: Auth init'); if(typeof window.initAuth === 'function'){console.log('Calling initAuth...'); window.initAuth();}else{console.error('initAuth not found!');}">TEST AUTH INIT</button>
+                    <button onclick="console.log('🚨 EMERGENCY: UI init'); if(typeof window.initUI === 'function'){console.log('Calling initUI...'); window.initUI();}else{console.error('initUI not found!');}">TEST UI INIT</button>
+                    <button onclick="console.log('🚨 EMERGENCY: Check elements'); console.log('loginBtn:', !!document.getElementById('loginBtn')); console.log('registerBtn:', !!document.getElementById('registerBtn')); console.log('faqBtn:', !!document.getElementById('faqBtn'));">CHECK ELEMENTS</button>
                 </div>
             `;
             document.body.appendChild(testDiv);
+            console.log('✅ Emergency test buttons added');
         });
     </script>
 

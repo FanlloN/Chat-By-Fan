@@ -19,85 +19,121 @@ const registerPassword = document.getElementById('registerPassword');
 
 // Initialize Auth
 function initAuth() {
-    console.log('Initializing Firebase Auth...');
+    console.log('=== INIT AUTH START ===');
 
     // Check if Firebase is loaded
     if (!window.auth || !window.database) {
-        console.error('Firebase not loaded! Check your internet connection and Firebase configuration.');
-        window.showNotification('Ошибка загрузки Firebase. Проверьте подключение к интернету.', 'error');
+        console.error('❌ Firebase not loaded! Check your internet connection and Firebase configuration.');
+        if (window.showNotification) {
+            window.showNotification('Ошибка загрузки Firebase. Проверьте подключение к интернету.', 'error');
+        }
         return;
     }
 
+    console.log('✅ Firebase is available');
+
     // Check if user is already logged in
     window.onAuthStateChanged(window.auth, (user) => {
-        console.log('Auth state changed:', user ? 'logged in' : 'logged out');
+        console.log('🔄 Auth state changed:', user ? 'logged in' : 'logged out');
         if (user) {
             currentUser = user;
+            console.log('👤 User logged in:', user.uid);
             showApp();
             // Initialize chat after auth
-            if (window.initChat) {
+            if (typeof window.initChat === 'function') {
+                console.log('🎯 Initializing chat...');
                 window.initChat();
+            } else {
+                console.error('❌ initChat function not found');
             }
         } else {
             currentUser = null;
+            console.log('🚪 User logged out');
             showAuth();
         }
     });
 
+    console.log('🎧 Setting up event listeners...');
     setupEventListeners();
-    console.log('Auth initialization complete');
+    console.log('✅ Auth initialization complete');
 }
 
 // Setup Event Listeners
 function setupEventListeners() {
-    console.log('Setting up auth event listeners...');
+    console.log('🎧 Setting up auth event listeners...');
+
+    // Get elements again (in case they weren't available before)
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const showRegister = document.getElementById('showRegister');
+    const showLogin = document.getElementById('showLogin');
+    const loginUsername = document.getElementById('loginUsername');
+    const loginPassword = document.getElementById('loginPassword');
+    const registerUsername = document.getElementById('registerUsername');
+    const registerPassword = document.getElementById('registerPassword');
 
     // Check if elements exist
-    if (!loginBtn) console.error('loginBtn not found!');
-    if (!registerBtn) console.error('registerBtn not found!');
-    if (!showRegister) console.error('showRegister not found!');
-    if (!showLogin) console.error('showLogin not found!');
+    console.log('🔍 Elements check:', {
+        loginBtn: !!loginBtn,
+        registerBtn: !!registerBtn,
+        showRegister: !!showRegister,
+        showLogin: !!showLogin,
+        loginUsername: !!loginUsername,
+        loginPassword: !!loginPassword,
+        registerUsername: !!registerUsername,
+        registerPassword: !!registerPassword
+    });
 
     if (loginBtn) {
         loginBtn.addEventListener('click', (e) => {
-            console.log('Login button clicked');
+            console.log('🔵 Login button clicked');
+            e.preventDefault();
             handleLogin();
         });
-        console.log('Login button listener added');
+        console.log('✅ Login button listener added');
+    } else {
+        console.error('❌ loginBtn not found!');
     }
 
     if (registerBtn) {
         registerBtn.addEventListener('click', (e) => {
-            console.log('Register button clicked');
+            console.log('🟢 Register button clicked');
+            e.preventDefault();
             handleRegister();
         });
-        console.log('Register button listener added');
+        console.log('✅ Register button listener added');
+    } else {
+        console.error('❌ registerBtn not found!');
     }
 
     if (showRegister) {
         showRegister.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Show register form clicked');
+            console.log('🔄 Show register form clicked');
             showRegisterForm();
         });
-        console.log('Show register listener added');
+        console.log('✅ Show register listener added');
+    } else {
+        console.error('❌ showRegister not found!');
     }
 
     if (showLogin) {
         showLogin.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Show login form clicked');
+            console.log('🔄 Show login form clicked');
             showLoginForm();
         });
-        console.log('Show login listener added');
+        console.log('✅ Show login listener added');
+    } else {
+        console.error('❌ showLogin not found!');
     }
 
     // Enter key handlers
     if (loginUsername) {
         loginUsername.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                console.log('Enter pressed on username');
-                loginPassword.focus();
+                console.log('⌨️ Enter pressed on username');
+                if (loginPassword) loginPassword.focus();
             }
         });
     }
@@ -105,7 +141,7 @@ function setupEventListeners() {
     if (loginPassword) {
         loginPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                console.log('Enter pressed on login password');
+                console.log('⌨️ Enter pressed on login password');
                 handleLogin();
             }
         });
@@ -114,8 +150,8 @@ function setupEventListeners() {
     if (registerUsername) {
         registerUsername.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                console.log('Enter pressed on register username');
-                registerPassword.focus();
+                console.log('⌨️ Enter pressed on register username');
+                if (registerPassword) registerPassword.focus();
             }
         });
     }
@@ -123,13 +159,13 @@ function setupEventListeners() {
     if (registerPassword) {
         registerPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                console.log('Enter pressed on register password');
+                console.log('⌨️ Enter pressed on register password');
                 handleRegister();
             }
         });
     }
 
-    console.log('Auth event listeners setup complete');
+    console.log('✅ Auth event listeners setup complete');
 }
 
 // Handle Login

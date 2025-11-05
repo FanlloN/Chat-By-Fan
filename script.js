@@ -2,21 +2,33 @@
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('=== DOM CONTENT LOADED ===');
     console.log('Chat by Fan initializing...');
 
-    // Initialize all modules in correct order
-    if (window.initAuth) {
-        window.initAuth();
-        console.log('Auth module initialized');
-    }
+    // Wait for all scripts to load
+    setTimeout(() => {
+        console.log('Initializing modules after timeout...');
 
-    if (window.initUI) {
-        window.initUI();
-        console.log('UI module initialized');
-    }
+        // Initialize all modules in correct order
+        if (typeof window.initAuth === 'function') {
+            console.log('Calling initAuth...');
+            window.initAuth();
+            console.log('✅ Auth module initialized');
+        } else {
+            console.error('❌ initAuth function not found');
+        }
 
-    // Chat will be initialized after authentication
-    console.log('All modules loaded successfully');
+        if (typeof window.initUI === 'function') {
+            console.log('Calling initUI...');
+            window.initUI();
+            console.log('✅ UI module initialized');
+        } else {
+            console.error('❌ initUI function not found');
+        }
+
+        // Chat will be initialized after authentication
+        console.log('✅ All modules loaded successfully');
+    }, 1000); // Wait 1 second for all scripts to load
 });
 
 // Global error handler
