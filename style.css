@@ -940,6 +940,10 @@ body.dark-theme .modal-header {
     overflow: hidden;
 }
 
+body.dark-theme .settings-menu {
+    background: rgba(15, 23, 42, 0.95);
+}
+
 .settings-item {
     display: flex;
     align-items: center;
