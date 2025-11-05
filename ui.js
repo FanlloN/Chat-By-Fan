@@ -45,7 +45,7 @@ function filterChats(query) {
 
 // Settings Menu
 function initSettings() {
-    settingsBtn.addEventListener('click', showSettingsModal);
+    settingsBtn.addEventListener('click', showSettingsMenu);
 }
 
 // FAQ Functionality
@@ -69,145 +69,115 @@ function hideFAQModal() {
     faqModal.style.display = 'none';
 }
 
-// Show Settings Modal
-function showSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    modal.style.display = 'flex';
+// Show Settings Menu
+function showSettingsMenu() {
+    // Create settings menu
+    const settingsMenu = document.createElement('div');
+    settingsMenu.className = 'settings-menu';
+    settingsMenu.innerHTML = `
+        <div class="settings-item" id="changeAvatarBtn">
+            <span>📷 Изменить аватарку</span>
+        </div>
+        <div class="settings-item" id="themeToggle">
+            <span>🌙 Темная тема</span>
+            <label class="switch">
+                <input type="checkbox" id="themeSwitch">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="settings-item" id="logoutBtn">
+            <span>🚪 Выйти</span>
+        </div>
+    `;
 
-    // Load current settings
-    loadSettings();
+    // Position menu
+    const rect = settingsBtn.getBoundingClientRect();
+    settingsMenu.style.position = 'absolute';
+    settingsMenu.style.top = rect.bottom + 10 + 'px';
+    settingsMenu.style.right = '15px';
+    settingsMenu.style.zIndex = '1000';
+
+    // Add to DOM
+    document.body.appendChild(settingsMenu);
 
     // Setup event listeners
-    setupSettingsModal();
+    setupSettingsMenu(settingsMenu);
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+                settingsMenu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
 }
 
-// Setup Settings Modal
-function setupSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    const closeBtn = document.getElementById('closeSettingsModal');
+// Setup Settings Menu
+function setupSettingsMenu(menu) {
+    const changeAvatarBtn = menu.querySelector('#changeAvatarBtn');
+    const themeToggle = menu.querySelector('#themeToggle');
+    const themeSwitch = menu.querySelector('#themeSwitch');
+    const logoutBtn = menu.querySelector('#logoutBtn');
 
-    // Close modal
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
+    // Load current theme
+    const isDark = document.body.classList.contains('dark-theme');
+    themeSwitch.checked = isDark;
+
+    // Theme toggle
+    themeToggle.addEventListener('click', (e) => {
+        if (e.target === themeSwitch) return; // Don't toggle twice
+        themeSwitch.checked = !themeSwitch.checked;
+        toggleTheme();
     });
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
+    // Change Avatar
+    changeAvatarBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-    // Tab switching
-    const tabBtns = modal.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
+        console.log('Avatar button clicked');
 
-            // Remove active class from all tabs
-            tabBtns.forEach(b => b.classList.remove('active'));
-            modal.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        input.multiple = false;
 
-            // Add active class to clicked tab
-            btn.classList.add('active');
-            document.getElementById(tabName + '-tab').classList.add('active');
-        });
-    });
-
-    // Theme selection
-    const themeOptions = modal.querySelectorAll('.theme-option');
-    themeOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            const theme = option.dataset.theme;
-            setTheme(theme);
-            themeOptions.forEach(o => o.classList.remove('selected'));
-            option.classList.add('selected');
-        });
-    });
-
-    // Avatar selection
-    const emojiBtns = modal.querySelectorAll('.emoji-btn');
-    emojiBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const emoji = btn.dataset.emoji;
-            setAvatarEmoji(emoji);
-            emojiBtns.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-        });
-    });
-
-    // Custom avatar upload
-    const uploadBtn = document.getElementById('uploadAvatarBtn');
-    const fileInput = document.getElementById('avatarFileInput');
-
-    uploadBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                await uploadAvatar(file);
-                showNotification('Аватар обновлен!', 'success');
-            } catch (error) {
-                showNotification('Ошибка загрузки аватара', 'error');
+        input.onchange = async (event) => {
+            console.log('File selected:', event.target.files[0]);
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    await uploadAvatar(file);
+                } catch (error) {
+                    console.error('Avatar upload failed:', error);
+                    showNotification('Ошибка загрузки аватарки', 'error');
+                }
             }
-        }
+            if (input.parentNode) {
+                input.parentNode.removeChild(input);
+            }
+        };
+
+        // Add to body and trigger
+        document.body.appendChild(input);
+        setTimeout(() => {
+            input.click();
+        }, 10);
+
+        menu.remove();
     });
 
-    // Password change
-    const changePasswordBtn = document.getElementById('changePasswordBtn');
-    changePasswordBtn.addEventListener('click', async () => {
-        const oldPassword = document.getElementById('oldPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (!oldPassword || !newPassword || !confirmPassword) {
-            showNotification('Заполните все поля', 'error');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            showNotification('Пароли не совпадают', 'error');
-            return;
-        }
-
-        try {
-            await changePassword(oldPassword, newPassword);
-            showNotification('Пароль изменен!', 'success');
-            document.getElementById('oldPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-        } catch (error) {
-            showNotification('Ошибка изменения пароля', 'error');
-        }
-    });
-
-    // Privacy settings
-    const notificationsToggle = document.getElementById('notificationsToggle');
-    const callsToggle = document.getElementById('callsToggle');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    notificationsToggle.addEventListener('change', () => {
-        const enabled = notificationsToggle.checked;
-        localStorage.setItem('notificationsEnabled', enabled);
-        if (enabled) {
-            requestNotificationPermission();
-        }
-    });
-
-    callsToggle.addEventListener('change', () => {
-        const enabled = callsToggle.checked;
-        localStorage.setItem('callsEnabled', enabled);
-    });
+    themeSwitch.addEventListener('change', toggleTheme);
 
     // Logout
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (confirm('Вы точно хотите выйти из аккаунта?')) {
-            modal.style.display = 'none';
+        if (confirm('Вы уверены, что хотите выйти?')) {
             window.logoutUser().then(() => {
                 // Force redirect to auth screen
                 const authScreen = document.getElementById('authScreen');
@@ -221,84 +191,8 @@ function setupSettingsModal() {
                 showNotification('Ошибка при выходе', 'error');
             });
         }
+        menu.remove();
     });
-}
-
-// Load Settings
-function loadSettings() {
-    // Load theme
-    const currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
-    const themeOptions = document.querySelectorAll('.theme-option');
-    themeOptions.forEach(option => {
-        if (option.dataset.theme === currentTheme) {
-            option.classList.add('selected');
-        } else {
-            option.classList.remove('selected');
-        }
-    });
-
-    // Load privacy settings
-    const notificationsEnabled = localStorage.getItem('notificationsEnabled') === 'true';
-    const callsEnabled = localStorage.getItem('callsEnabled') === 'true';
-
-    document.getElementById('notificationsToggle').checked = notificationsEnabled;
-    document.getElementById('callsToggle').checked = callsEnabled;
-}
-
-// Set Theme
-function setTheme(theme) {
-    if (theme === 'dark') {
-        document.body.classList.add('dark-theme');
-    } else {
-        document.body.classList.remove('dark-theme');
-    }
-    localStorage.setItem('theme', theme);
-}
-
-// Set Avatar Emoji
-function setAvatarEmoji(emoji) {
-    const userAvatar = document.getElementById('userAvatar');
-    const emojiData = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="70" font-size="60" text-anchor="middle">${emoji}</text></svg>`)}`;
-
-    userAvatar.src = emojiData;
-
-    // Save to localStorage and database
-    localStorage.setItem('userAvatar', emojiData);
-
-    if (window.currentUser()) {
-        window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
-            avatar: emojiData
-        }).then(() => {
-            showNotification('Аватар обновлен!', 'success');
-        }).catch((error) => {
-            console.error('Error updating avatar:', error);
-            showNotification('Ошибка обновления аватара', 'error');
-        });
-    }
-}
-
-// Change Password
-async function changePassword(oldPassword, newPassword) {
-    const user = window.auth.currentUser;
-    if (!user) throw new Error('User not authenticated');
-
-    // Reauthenticate user
-    const credential = window.EmailAuthProvider.credential(user.email, oldPassword);
-    await window.reauthenticateWithCredential(user, credential);
-
-    // Update password
-    await window.updatePassword(user, newPassword);
-}
-
-// Request Notification Permission
-function requestNotificationPermission() {
-    if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                showNotification('Уведомления включены!', 'success');
-            }
-        });
-    }
 }
 
 // Toggle Theme
