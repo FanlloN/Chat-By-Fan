@@ -3,6 +3,9 @@
 // DOM Elements
 const settingsBtn = document.getElementById('settingsBtn');
 const searchInput = document.getElementById('searchInput');
+const faqBtn = document.getElementById('faqBtn');
+const faqModal = document.getElementById('faqModal');
+const closeFaqModal = document.getElementById('closeFaqModal');
 
 // Search Functionality
 function initSearch() {
@@ -43,6 +46,27 @@ function filterChats(query) {
 // Settings Menu
 function initSettings() {
     settingsBtn.addEventListener('click', showSettingsMenu);
+}
+
+// FAQ Functionality
+function initFAQ() {
+    faqBtn.addEventListener('click', showFAQModal);
+    closeFaqModal.addEventListener('click', hideFAQModal);
+
+    // Close modal when clicking outside
+    faqModal.addEventListener('click', (e) => {
+        if (e.target === faqModal) {
+            hideFAQModal();
+        }
+    });
+}
+
+function showFAQModal() {
+    faqModal.style.display = 'flex';
+}
+
+function hideFAQModal() {
+    faqModal.style.display = 'none';
 }
 
 // Show Settings Menu
@@ -336,6 +360,7 @@ function hideLoading(element, originalText) {
 function initUI() {
     initSearch();
     initSettings();
+    initFAQ();
     initMobile();
     loadSavedTheme();
 }
