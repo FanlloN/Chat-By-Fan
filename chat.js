@@ -985,6 +985,9 @@ function setupEventListeners() {
     // Channel avatar change event listener
     document.getElementById('changeChannelAvatarBtn').addEventListener('click', changeChannelAvatar);
 
+    // Block user event listener
+    document.getElementById('blockUserBtn').addEventListener('click', blockUser);
+
     // Close modal when clicking outside
     newChatModal.addEventListener('click', (e) => {
         if (e.target === newChatModal) closeModal();
