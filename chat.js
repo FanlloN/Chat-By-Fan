@@ -39,10 +39,20 @@ let replyToMessageId = null;
         return false;
     });
 
-    // Disable F12, Ctrl+Shift+I, Ctrl+U, etc.
+    // Allow F12 for debugging, block other dangerous shortcuts
     document.addEventListener('keydown', (e) => {
+        // Allow F12 to open console for debugging
+        if (e.key === 'F12') {
+            // Allow F12 but log it
+            window.securityCore.triggerSecurityAlert('F12_CONSOLE_OPENED', {
+                timestamp: Date.now(),
+                userAgent: navigator.userAgent
+            });
+            return true; // Allow the event
+        }
+
+        // Block other dangerous shortcuts
         if (
-            e.key === 'F12' ||
             (e.ctrlKey && e.shiftKey && e.key === 'I') ||
             (e.ctrlKey && e.shiftKey && e.key === 'J') ||
             (e.ctrlKey && e.shiftKey && e.key === 'C') ||
@@ -66,22 +76,29 @@ let replyToMessageId = null;
         return originalToString.apply(this, arguments);
     };
 
-    // Obfuscate console methods
+    // Obfuscate console methods but allow normal debugging
     const originalLog = console.log;
     const originalWarn = console.warn;
     const originalError = console.error;
 
     console.log = function(...args) {
-        window.securityCore.triggerSecurityAlert('CONSOLE_LOG_ATTEMPT', { args: args.join(' ') });
+        // Only log if it's not a normal application message
+        if (args.length > 0 && typeof args[0] === 'string' && !args[0].includes('Chat initialized')) {
+            window.securityCore.triggerSecurityAlert('CONSOLE_LOG_ATTEMPT', { args: args.join(' ') });
+        }
         return originalLog.apply(console, args);
     };
 
     console.warn = function(...args) {
-        window.securityCore.triggerSecurityAlert('CONSOLE_WARN_ATTEMPT', { args: args.join(' ') });
+        // Allow warnings but log them
+        if (args.length > 0 && typeof args[0] === 'string' && !args[0].includes('Web Crypto')) {
+            window.securityCore.triggerSecurityAlert('CONSOLE_WARN_ATTEMPT', { args: args.join(' ') });
+        }
         return originalWarn.apply(console, args);
     };
 
     console.error = function(...args) {
+        // Allow errors but log them
         window.securityCore.triggerSecurityAlert('CONSOLE_ERROR_ATTEMPT', { args: args.join(' ') });
         return originalError.apply(console, args);
     };
@@ -126,6 +143,20 @@ const closeNewChatModal = document.getElementById('closeNewChatModal');
 
 // Initialize Chat with Enhanced Security
 function initChat() {
+    // Basic security check - ensure security core is loaded
+    if (!window.securityCore) {
+        console.error('Security core not initialized - loading fallback mode');
+        // Fallback initialization without security checks
+        loadChats();
+        loadCurrentUserInfo();
+        setupEventListeners();
+        startStorageCleanupScheduler();
+        startImageCompressionScheduler();
+        initSecurityMonitoring();
+        console.log('Chat initialized in fallback mode');
+        return;
+    }
+
     if (!window.currentUser()) return;
 
     // Security check before initialization
