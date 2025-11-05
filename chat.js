@@ -26,11 +26,24 @@ const closeNewChatModal = document.getElementById('closeNewChatModal');
 
 // Initialize Chat
 function initChat() {
-    if (!window.getCurrentUser()) return;
+    console.log('Initializing chat module...');
+
+    if (!window.getCurrentUser()) {
+        console.log('No user logged in, skipping chat initialization');
+        return;
+    }
+
+    if (!window.database) {
+        console.error('Firebase database not available');
+        window.showNotification('Ошибка базы данных', 'error');
+        return;
+    }
 
     loadChats();
     loadCurrentUserInfo();
     setupEventListeners();
+
+    console.log('Chat module initialized successfully');
 }
 
 // Load User Chats

@@ -41,6 +41,22 @@
         const storage = getStorage(app);
         console.log('Firebase Storage initialized');
 
+        // Test Firebase connection
+        console.log('Testing Firebase connection...');
+        try {
+            // Test database connection
+            const testRef = ref(database, '.info/connected');
+            onValue(testRef, (snap) => {
+                if (snap.val() === true) {
+                    console.log('✅ Firebase database connected successfully');
+                } else {
+                    console.log('❌ Firebase database connection failed');
+                }
+            });
+        } catch (error) {
+            console.error('Firebase connection test failed:', error);
+        }
+
         // Make Firebase functions available globally
         window.auth = auth;
         window.database = database;
@@ -202,5 +218,19 @@
     <script src="auth.js"></script>
     <script src="chat.js"></script>
     <script src="ui.js"></script>
+
+    <!-- Debug script to check if everything loads -->
+    <script>
+        window.addEventListener('load', () => {
+            console.log('=== PAGE LOAD DEBUG ===');
+            console.log('Firebase auth available:', !!window.auth);
+            console.log('Firebase database available:', !!window.database);
+            console.log('Auth functions available:', !!window.initAuth);
+            console.log('Chat functions available:', !!window.initChat);
+            console.log('UI functions available:', !!window.initUI);
+            console.log('Notification function available:', !!window.showNotification);
+            console.log('=== DEBUG COMPLETE ===');
+        });
+    </script>
 </body>
 </html>

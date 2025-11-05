@@ -4,10 +4,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Chat by Fan initializing...');
 
-    // All initialization is handled by individual modules
-    // auth.js handles authentication
-    // chat.js handles chat functionality
-    // ui.js handles UI enhancements
+    // Initialize all modules in correct order
+    if (window.initAuth) {
+        window.initAuth();
+        console.log('Auth module initialized');
+    }
+
+    if (window.initUI) {
+        window.initUI();
+        console.log('UI module initialized');
+    }
+
+    // Chat will be initialized after authentication
+    console.log('All modules loaded successfully');
 });
 
 // Global error handler

@@ -7,8 +7,10 @@ const userDisplayName = document.getElementById('userDisplayName');
 
 // Initialize UI
 function initUI() {
+    console.log('Initializing UI module...');
     setupUIEventListeners();
     updateUserProfile();
+    console.log('UI module initialized successfully');
 }
 
 // Setup UI Event Listeners

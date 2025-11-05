@@ -19,8 +19,18 @@ const registerPassword = document.getElementById('registerPassword');
 
 // Initialize Auth
 function initAuth() {
+    console.log('Initializing Firebase Auth...');
+
+    // Check if Firebase is loaded
+    if (!window.auth || !window.database) {
+        console.error('Firebase not loaded! Check your internet connection and Firebase configuration.');
+        window.showNotification('Ошибка загрузки Firebase. Проверьте подключение к интернету.', 'error');
+        return;
+    }
+
     // Check if user is already logged in
     window.onAuthStateChanged(window.auth, (user) => {
+        console.log('Auth state changed:', user ? 'logged in' : 'logged out');
         if (user) {
             currentUser = user;
             showApp();
@@ -35,6 +45,7 @@ function initAuth() {
     });
 
     setupEventListeners();
+    console.log('Auth initialization complete');
 }
 
 // Setup Event Listeners
