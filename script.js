@@ -17,6 +17,9 @@ window.auth = getAuth(window.app);
 window.database = getDatabase(window.app);
 window.storage = getStorage(window.app);
 
+// Storage functions - fix the ref import
+window.storageRef = ref;
+
 // Firebase functions
 window.dbRef = ref;
 window.onValue = onValue;
@@ -38,7 +41,7 @@ window.onAuthStateChanged = onAuthStateChanged;
 // Storage functions
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
-window.ref_storage = ref_storage;
+window.storageRef = ref;
 
 // Browser notification
 window.showBrowserNotification = (title, body) => {

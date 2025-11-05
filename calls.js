@@ -231,7 +231,8 @@ function sendCallSignal(type, data) {
 
     // Store in Firebase for the specific chat
     const signalsRef = window.dbRef(window.database, `callSignals/${currentChat.id}`);
-    window.push(signalsRef, signalData);
+    const newSignalRef = window.push(signalsRef);
+    window.set(newSignalRef, signalData);
 }
 
 // Listen for call signals
@@ -243,7 +244,10 @@ function listenForCallSignals() {
         const signals = snapshot.val();
         if (!signals) return;
 
-        Object.values(signals).forEach(signal => {
+        // Process signals in chronological order
+        const signalList = Object.values(signals).sort((a, b) => a.timestamp - b.timestamp);
+
+        signalList.forEach(signal => {
             if (signal.sender === window.currentUser().uid) return; // Ignore own signals
 
             handleCallSignal(signal);
@@ -254,6 +258,10 @@ function listenForCallSignals() {
 // Handle incoming call signals
 async function handleCallSignal(signal) {
     try {
+        // Prevent duplicate processing
+        if (signal.processed) return;
+        signal.processed = true;
+
         switch (signal.type) {
             case 'offer':
                 await handleOffer(signal.data);
