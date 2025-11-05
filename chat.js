@@ -1624,7 +1624,7 @@ async function createGroupChat() {
         showNotification('Создание группы...', 'info');
 
         const currentUser = window.currentUser();
-        const participants = [];
+        let participants = [];
         const pendingMembers = [];
 
         // Collect participants
