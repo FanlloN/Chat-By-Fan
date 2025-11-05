@@ -219,6 +219,24 @@
     <script src="chat.js"></script>
     <script src="ui.js"></script>
 
+    <!-- Emergency test buttons -->
+    <script>
+        // Add test buttons to page
+        document.addEventListener('DOMContentLoaded', () => {
+            const testDiv = document.createElement('div');
+            testDiv.innerHTML = `
+                <div style="position: fixed; top: 10px; left: 10px; z-index: 9999; background: yellow; padding: 10px; border: 2px solid red;">
+                    <button onclick="console.log('EMERGENCY: Login test'); document.getElementById('loginBtn')?.click();">TEST LOGIN</button>
+                    <button onclick="console.log('EMERGENCY: Register test'); document.getElementById('registerBtn')?.click();">TEST REGISTER</button>
+                    <button onclick="console.log('EMERGENCY: FAQ test'); document.getElementById('faqBtn')?.click();">TEST FAQ</button>
+                    <button onclick="console.log('EMERGENCY: Auth init'); window.initAuth?.();">TEST AUTH INIT</button>
+                    <button onclick="console.log('EMERGENCY: UI init'); window.initUI?.();">TEST UI INIT</button>
+                </div>
+            `;
+            document.body.appendChild(testDiv);
+        });
+    </script>
+
     <!-- Debug script to check if everything loads -->
     <script>
         window.addEventListener('load', () => {
@@ -237,6 +255,32 @@
             console.log('sendBtn:', !!document.getElementById('sendBtn'));
             console.log('faqBtn:', !!document.getElementById('faqBtn'));
             console.log('settingsBtn:', !!document.getElementById('settingsBtn'));
+
+            // Test button clicks manually
+            setTimeout(() => {
+                console.log('=== MANUAL BUTTON TEST ===');
+
+                const loginBtn = document.getElementById('loginBtn');
+                const registerBtn = document.getElementById('registerBtn');
+                const faqBtn = document.getElementById('faqBtn');
+
+                if (loginBtn) {
+                    console.log('Testing login button click...');
+                    loginBtn.click();
+                }
+
+                if (registerBtn) {
+                    console.log('Testing register button click...');
+                    registerBtn.click();
+                }
+
+                if (faqBtn) {
+                    console.log('Testing FAQ button click...');
+                    faqBtn.click();
+                }
+
+                console.log('=== MANUAL TEST COMPLETE ===');
+            }, 2000);
 
             console.log('=== DEBUG COMPLETE ===');
         });
