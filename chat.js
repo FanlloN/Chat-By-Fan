@@ -1652,14 +1652,14 @@ async function createGroupChat() {
         }
 
         // Ensure participants array contains valid user IDs (strings) and remove duplicates
-        participants = [...new Set(tempParticipants.filter(id => id && typeof id === 'string' && id.trim() !== ''))];
+        const validParticipants = [...new Set(tempParticipants.filter(id => id && typeof id === 'string' && id.trim() !== ''))];
 
         // Create group chat
         const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const groupData = {
             id: groupId,
             name: groupName,
-            participants: participants,
+            participants: validParticipants,
             createdAt: Date.now(),
             createdBy: currentUser.uid,
             type: 'group',
