@@ -128,7 +128,9 @@ function createChatItem(chatId, chatData) {
     }
 
     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjUwIiBmaWxsPSIjNjY2NjY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNDAiPkDwn5iKPC90ZXh0Pgo8L3N2Zz4=';
-    const chatName = otherParticipant?.displayName || otherParticipant?.username || 'Неизвестный';
+    const chatName = otherParticipant?.displayName ?
+        `${otherParticipant.displayName} (${otherParticipant.username})` :
+        (otherParticipant?.username || 'Неизвестный');
     const chatAvatarSrc = otherParticipant?.avatar || defaultAvatar;
     const showDeleteBtn = true;
 
@@ -238,13 +240,26 @@ function createMessageElement(messageId, messageData) {
 
     const senderName = isOwn ?
         (users.get(window.currentUser().uid)?.displayName || users.get(window.currentUser().uid)?.username || 'Вы') :
-        (sender?.displayName || sender?.username || 'Неизвестный');
+        (sender?.displayName ? `${sender.displayName} (${sender.username})` : (sender?.username || 'Неизвестный'));
+
+    // Handle image messages
+    let messageContent = '';
+    if (messageData.type === 'image' && messageData.image) {
+        messageContent = `
+            <div class="message-image-container">
+                <img src="${messageData.image}" alt="${messageData.imageName || 'Изображение'}" class="message-image" onclick="openImageModal('${messageData.image}')">
+            </div>
+            <div class="message-text">${messageData.text}</div>
+        `;
+    } else {
+        messageContent = `<div class="message-text">${messageData.text}</div>`;
+    }
 
     messageDiv.innerHTML = `
         ${!isOwn ? `<div class="message-avatar"><img src="${avatarSrc}" alt="Avatar"></div>` : ''}
         <div class="message-content">
             ${!isOwn ? `<div class="message-sender">${senderName}</div>` : ''}
-            <div class="message-bubble">${messageData.text}</div>
+            <div class="message-bubble">${messageContent}</div>
             <div class="message-time">${time}</div>
         </div>
         ${isOwn ? `<div class="message-avatar"><img src="${avatarSrc}" alt="Avatar"></div>` : ''}
@@ -426,7 +441,9 @@ function updateChatUI() {
 
     const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjUwIiBmaWxsPSIjNjY2NjY2Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNDAiPkDwn5iKPC90ZXh0Pgo8L3N2Zz4=';
 
-    chatName.textContent = otherParticipant?.displayName || otherParticipant?.username || 'Неизвестный';
+    chatName.textContent = otherParticipant?.displayName ?
+        `${otherParticipant.displayName} (${otherParticipant.username})` :
+        (otherParticipant?.username || 'Неизвестный');
     chatStatus.textContent = otherParticipant?.online ? 'онлайн' : 'был(а) недавно';
     chatAvatar.src = otherParticipant?.avatar || defaultAvatar;
 
@@ -452,6 +469,14 @@ function setupEventListeners() {
         }
     });
 
+    // Image attachment functionality
+    const attachBtn = document.getElementById('attachBtn');
+    if (attachBtn) {
+        attachBtn.addEventListener('click', showAttachmentOptions);
+    }
+
+    // Clipboard paste for images
+    messageInput.addEventListener('paste', handlePaste);
 
     newChatBtn.addEventListener('click', () => {
         newChatModal.style.display = 'flex';
@@ -536,5 +561,141 @@ async function deleteChat(chatId) {
     }
 }
 
+// Show Attachment Options
+function showAttachmentOptions() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.style.display = 'none';
+
+    input.onchange = async (event) => {
+        const files = Array.from(event.target.files);
+        for (const file of files) {
+            if (file.type.startsWith('image/')) {
+                await sendImageMessage(file);
+            }
+        }
+    };
+
+    document.body.appendChild(input);
+    setTimeout(() => {
+        input.click();
+        input.remove();
+    }, 10);
+}
+
+// Handle Paste Event for Images
+async function handlePaste(event) {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+                await sendImageMessage(file);
+            }
+        }
+    }
+}
+
+// Send Image Message
+async function sendImageMessage(file) {
+    if (!currentChat || !file.type.startsWith('image/')) return;
+
+    // Validate file size (max 10MB for images)
+    if (file.size > 10 * 1024 * 1024) {
+        showNotification('Файл слишком большой. Максимальный размер: 10MB', 'error');
+        return;
+    }
+
+    try {
+        showNotification('Отправка изображения...', 'info');
+
+        // Convert image to base64
+        const base64String = await fileToBase64(file);
+
+        const messageData = {
+            text: '[Изображение]',
+            image: base64String,
+            imageName: file.name,
+            sender: window.currentUser().uid,
+            timestamp: Date.now(),
+            status: 'sent',
+            type: 'image'
+        };
+
+        const messagesRef = window.dbRef(window.database, `messages/${currentChat.id}`);
+        const newMessageRef = window.push(messagesRef);
+        await window.set(newMessageRef, messageData);
+
+        // Update chat last message
+        await window.update(window.dbRef(window.database, `chats/${currentChat.id}`), {
+            lastMessage: messageData
+        });
+
+        // Show notification for other participants
+        const otherParticipantId = currentChat.data.participants.find(id => id !== window.currentUser().uid);
+        if (otherParticipantId) {
+            const userRef = window.dbRef(window.database, `users/${otherParticipantId}`);
+            const snapshot = await window.get(userRef);
+            const userData = snapshot.val();
+            if (userData) {
+                const senderName = users.get(window.currentUser().uid)?.displayName || users.get(window.currentUser().uid)?.username || 'Пользователь';
+                window.showBrowserNotification('Новое изображение', `${senderName} отправил(а) изображение`);
+            }
+        }
+
+        scrollToBottom();
+        showNotification('Изображение отправлено!', 'success');
+    } catch (error) {
+        console.error('Error sending image:', error);
+        showNotification('Ошибка отправки изображения', 'error');
+    }
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
+// Open Image Modal
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const fullSizeImage = document.getElementById('fullSizeImage');
+    const closeBtn = document.getElementById('closeImageModal');
+
+    fullSizeImage.src = imageSrc;
+    modal.style.display = 'flex';
+
+    // Close modal functionality
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    closeBtn.onclick = closeModal;
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+
+    // Close on escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
 // Export functions
 window.initChat = initChat;
+window.openImageModal = openImageModal;

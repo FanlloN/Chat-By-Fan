@@ -111,8 +111,16 @@ function setupSettingsModal() {
     const modal = document.getElementById('settingsModal');
     const closeBtn = document.getElementById('closeSettingsModal');
 
+    // Remove existing event listeners to prevent duplicates
+    const newModal = modal.cloneNode(true);
+    modal.parentNode.replaceChild(newModal, modal);
+
+    // Get fresh references
+    const freshModal = document.getElementById('settingsModal');
+    const freshCloseBtn = document.getElementById('closeSettingsModal');
+
     // Tab switching
-    const tabs = modal.querySelectorAll('.settings-tab');
+    const tabs = freshModal.querySelectorAll('.settings-tab');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             switchTab(tab.dataset.tab);
@@ -120,18 +128,21 @@ function setupSettingsModal() {
     });
 
     // Close modal
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
+    freshCloseBtn.addEventListener('click', () => {
+        freshModal.style.display = 'none';
     });
 
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
+    freshModal.addEventListener('click', (e) => {
+        if (e.target === freshModal) {
+            freshModal.style.display = 'none';
         }
     });
 
     // Avatar selection
     setupAvatarSelection();
+
+    // Display name
+    setupDisplayName();
 
     // Password change
     setupPasswordChange();
@@ -146,6 +157,14 @@ function loadSettings() {
     const themeToggle = document.getElementById('themeToggle');
     const isDark = document.body.classList.contains('dark-theme');
     themeToggle.checked = isDark;
+
+    // Display name
+    const displayNameInput = document.getElementById('displayNameInput');
+    const currentUser = window.currentUser();
+    if (currentUser && users.has(currentUser.uid)) {
+        const userData = users.get(currentUser.uid);
+        displayNameInput.value = userData.displayName || '';
+    }
 
     // Notifications (stored in localStorage)
     const notificationsToggle = document.getElementById('notificationsToggle');
@@ -177,42 +196,107 @@ function switchTab(tabName) {
 
 // Setup Avatar Selection
 function setupAvatarSelection() {
+    // Remove existing event listeners
+    const existingEmojiBtns = document.querySelectorAll('.emoji-btn');
+    existingEmojiBtns.forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+    });
+
+    const existingUploadBtn = document.getElementById('uploadAvatarBtn');
+    if (existingUploadBtn) {
+        existingUploadBtn.replaceWith(existingUploadBtn.cloneNode(true));
+    }
+
     // Emoji buttons
     const emojiBtns = document.querySelectorAll('.emoji-btn');
     emojiBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const emoji = btn.dataset.emoji;
+            console.log('Emoji clicked:', emoji);
             await setEmojiAvatar(emoji);
         });
     });
 
     // Upload button
     const uploadBtn = document.getElementById('uploadAvatarBtn');
-    uploadBtn.addEventListener('click', () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.style.display = 'none';
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
 
-        input.onchange = async (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                try {
-                    await uploadAvatar(file);
-                    showNotification('Аватар успешно обновлен!', 'success');
-                } catch (error) {
-                    console.error('Avatar upload failed:', error);
-                    showNotification('Ошибка загрузки аватарки', 'error');
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        await uploadAvatar(file);
+                        showNotification('Аватар успешно обновлен!', 'success');
+                    } catch (error) {
+                        console.error('Avatar upload failed:', error);
+                        showNotification('Ошибка загрузки аватарки', 'error');
+                    }
                 }
-            }
-        };
+            };
 
-        document.body.appendChild(input);
-        setTimeout(() => {
-            input.click();
-            input.remove();
-        }, 10);
-    });
+            document.body.appendChild(input);
+            setTimeout(() => {
+                input.click();
+                input.remove();
+            }, 10);
+        });
+    }
+}
+
+// Setup Display Name
+function setupDisplayName() {
+    const saveBtn = document.getElementById('saveDisplayNameBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const displayNameInput = document.getElementById('displayNameInput');
+            const newDisplayName = displayNameInput.value.trim();
+
+            if (!window.currentUser()) {
+                showNotification('Сначала войдите в аккаунт', 'error');
+                return;
+            }
+
+            if (newDisplayName.length > 50) {
+                showNotification('Имя не может быть длиннее 50 символов', 'error');
+                return;
+            }
+
+            try {
+                showLoading(saveBtn, 'Сохранение...');
+
+                await window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
+                    displayName: newDisplayName || null
+                });
+
+                // Update local user data
+                if (users.has(window.currentUser().uid)) {
+                    users.get(window.currentUser().uid).displayName = newDisplayName || null;
+                }
+
+                // Update UI
+                const userDisplayName = document.getElementById('userDisplayName');
+                if (userDisplayName) {
+                    userDisplayName.textContent = newDisplayName || users.get(window.currentUser().uid)?.username || 'Пользователь';
+                }
+
+                showNotification('Отображаемое имя сохранено!', 'success');
+            } catch (error) {
+                console.error('Error saving display name:', error);
+                showNotification('Ошибка сохранения имени', 'error');
+            } finally {
+                hideLoading(saveBtn, 'Сохранить имя');
+            }
+        });
+    }
 }
 
 // Set Emoji Avatar
@@ -223,22 +307,41 @@ async function setEmojiAvatar(emoji) {
     }
 
     try {
+        console.log('Setting emoji avatar:', emoji);
+
         // Create SVG with emoji
         const svgData = `<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#666666"/><text x="50" y="65" text-anchor="middle" fill="white" font-size="40">${emoji}</text></svg>`;
         const base64Svg = btoa(svgData);
+        const avatarUrl = `data:image/svg+xml;base64,${base64Svg}`;
+
+        console.log('Avatar URL:', avatarUrl);
 
         // Update user profile in database
         await window.update(window.dbRef(window.database, `users/${window.currentUser().uid}`), {
-            avatar: `data:image/svg+xml;base64,${base64Svg}`
+            avatar: avatarUrl
         });
+
+        console.log('Database updated');
 
         // Update local avatar display immediately
         const userAvatar = document.getElementById('userAvatar');
         if (userAvatar) {
-            userAvatar.src = `data:image/svg+xml;base64,${base64Svg}`;
+            userAvatar.src = avatarUrl;
+            console.log('User avatar updated');
+        }
+
+        // Also update chat avatars if they exist
+        const chatAvatar = document.getElementById('chatAvatar');
+        if (chatAvatar && currentChat) {
+            // Check if current chat is with the user themselves
+            const otherParticipantId = currentChat.data.participants.find(id => id !== window.currentUser().uid);
+            if (!otherParticipantId) { // This means it's a self-chat or similar
+                chatAvatar.src = avatarUrl;
+            }
         }
 
         showNotification('Аватар успешно обновлен!', 'success');
+        console.log('Emoji avatar set successfully');
     } catch (error) {
         console.error('Error setting emoji avatar:', error);
         showNotification('Ошибка обновления аватара', 'error');

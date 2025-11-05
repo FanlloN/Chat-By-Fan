@@ -155,6 +155,7 @@
             <div class="message-input-container" id="messageInputContainer" style="display: none;">
                 <div class="message-input-wrapper">
                     <input type="text" id="messageInput" placeholder="Напишите сообщение..." class="message-input">
+                    <button class="attach-btn" id="attachBtn" title="Прикрепить изображение">📎</button>
                     <button class="send-btn" id="sendBtn"><img src="https://png.pngtree.com/png-vector/20250605/ourmid/pngtree-white-paper-airplane-in-flight-isolated-on-transparent-png-image_16468361.png" alt="Send" style="width: 20px; height: 20px;"></button>
                 </div>
             </div>
@@ -188,6 +189,18 @@
             <div class="modal-body">
                 <input type="text" id="newChatUsername" placeholder="Имя пользователя" class="modal-input">
                 <button id="startNewChatBtn" class="modal-btn">Начать чат</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal" style="display: none;">
+        <div class="modal-content image-modal-content">
+            <div class="modal-header">
+                <button class="close-modal" id="closeImageModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="fullSizeImage" src="" alt="Изображение" style="max-width: 100%; max-height: 80vh; object-fit: contain;">
             </div>
         </div>
     </div>
@@ -240,6 +253,12 @@
                             <div class="avatar-upload">
                                 <button id="uploadAvatarBtn" class="modal-btn">Загрузить изображение</button>
                             </div>
+                        </div>
+                        <div class="display-name-section">
+                            <h4>Отображаемое имя</h4>
+                            <input type="text" id="displayNameInput" placeholder="Введите отображаемое имя" class="modal-input" maxlength="50">
+                            <p class="display-name-hint">Это имя будет видно другим пользователям в чате</p>
+                            <button id="saveDisplayNameBtn" class="modal-btn">Сохранить имя</button>
                         </div>
                     </div>
 
