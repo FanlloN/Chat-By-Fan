@@ -3,12 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://chatbyfan-default-rtdb.europe-west1.firebasedatabase.app https://chatbyfan.firebaseapp.com https://www.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <meta name="referrer" content="no-referrer">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
     <title>Chat by Fan</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📱</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -30,8 +24,6 @@
             messagingSenderId: "844332208537",
             appId: "1:844332208537:web:5b2747debe491ec8610308"
         };
-
-        console.log('Firebase config loaded:', firebaseConfig.projectId);
 
         console.log('Firebase config loaded:', firebaseConfig.projectId);
 
@@ -200,33 +192,9 @@
         </div>
     </div>
 
-    <!-- Security: Subresource Integrity for external scripts (if needed) -->
-    <!-- Note: Firebase scripts are loaded via module imports in head, which is secure -->
-
-    <!-- Security: Integrity checks for local scripts would be added in production -->
     <script src="script.js"></script>
     <script src="auth.js"></script>
     <script src="chat.js"></script>
     <script src="ui.js"></script>
-
-    <!-- Security: Remove any potential attack vectors -->
-    <script>
-        // Security: Lock down the global scope (temporarily disabled for debugging)
-        // Object.defineProperty(window, 'eval', { value: undefined, writable: false });
-        // Object.defineProperty(window, 'Function', { value: undefined, writable: false });
-        // Object.defineProperty(window, 'setTimeout', { value: undefined, writable: false });
-        // Object.defineProperty(window, 'setInterval', { value: undefined, writable: false });
-
-        // Security: Prevent prototype pollution (temporarily disabled for debugging)
-        // Object.freeze(Object.prototype);
-        // Object.freeze(Array.prototype);
-        // Object.freeze(Function.prototype);
-
-        // Security: Hide sensitive information from global scope
-        // In production, Firebase config should be loaded from environment variables
-        if (typeof console !== 'undefined') {
-            console.log('🔒 Security measures active (debug mode)');
-        }
-    </script>
 </body>
 </html>

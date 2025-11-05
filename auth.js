@@ -53,27 +53,8 @@ async function loginUser() {
     const username = loginUsername.value.trim().toLowerCase();
     const password = loginPassword.value.trim();
 
-    // Security: Rate limiting
-    if (!checkRateLimit('login_' + username)) {
-        alert('Слишком много попыток входа. Попробуйте позже.');
-        return;
-    }
-
-    // Security: Input validation
     if (!username || !password) {
         alert('Пожалуйста, заполните все поля');
-        return;
-    }
-
-    // Security: Username validation
-    if (username.length > 50 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-        alert('Неверный формат никнейма');
-        return;
-    }
-
-    // Security: Password length check
-    if (password.length > 100) {
-        alert('Пароль слишком длинный');
         return;
     }
 
@@ -118,19 +99,17 @@ async function loginUser() {
                 const user = userCredential.user;
                 console.log('Auto-registration successful for user:', user.uid);
     
-                // Save user profile to database (without sensitive info)
-                const userProfile = {
+                // Save user profile to database
+                await window.set(window.dbRef(window.database, `users/${user.uid}`), {
                     uid: user.uid,
                     username: username.toLowerCase(),
+                    email: email,
                     displayName: username,
                     avatar: null,
                     createdAt: Date.now(),
                     lastSeen: Date.now(),
                     online: true
-                    // Note: Email is not stored in user profile for privacy
-                };
-        
-                await window.set(window.dbRef(window.database, `users/${user.uid}`), userProfile);
+                });
     
                 // Reserve the username (case-insensitive)
                 await window.set(window.dbRef(window.database, `usernames/${username.toLowerCase()}`), { uid: user.uid });
@@ -165,21 +144,13 @@ async function registerUser() {
     const username = registerUsername.value.trim();
     const password = registerPassword.value.trim();
 
-    // Security: Rate limiting
-    if (!checkRateLimit('register_' + username)) {
-        alert('Слишком много попыток регистрации. Попробуйте позже.');
-        return;
-    }
-
-    // Security: Input validation
     if (!username || !password) {
         alert('Пожалуйста, заполните все поля');
         return;
     }
 
-    // Security: Username validation
-    if (username.length < 3 || username.length > 30) {
-        alert('Никнейм должен содержать от 3 до 30 символов');
+    if (username.length < 3) {
+        alert('Никнейм должен содержать минимум 3 символа');
         return;
     }
 
@@ -197,16 +168,8 @@ async function registerUser() {
         return;
     }
 
-    // Security: Password validation
-    if (password.length < 8 || password.length > 100) {
-        alert('Пароль должен содержать от 8 до 100 символов');
-        return;
-    }
-
-    // Security: Check for common weak passwords
-    const weakPasswords = ['password', '12345678', 'qwerty', 'admin', 'user'];
-    if (weakPasswords.includes(password.toLowerCase())) {
-        alert('Пароль слишком простой. Выберите более сложный пароль.');
+    if (password.length < 6) {
+        alert('Пароль должен содержать минимум 6 символов');
         return;
     }
 
@@ -234,19 +197,17 @@ async function registerUser() {
         const user = userCredential.user;
         console.log('Registration successful for user:', user.uid);
 
-        // Save user profile to database (without sensitive info)
-        const userProfile = {
+        // Save user profile to database
+        await window.set(window.dbRef(window.database, `users/${user.uid}`), {
             uid: user.uid,
             username: username.toLowerCase(),
+            email: uniqueEmail,
             displayName: username,
             avatar: null,
             createdAt: Date.now(),
             lastSeen: Date.now(),
             online: true
-            // Note: Email is not stored in user profile for privacy
-        };
-
-        await window.set(window.dbRef(window.database, `users/${user.uid}`), userProfile);
+        });
 
         // Reserve the username (case-insensitive)
         await window.set(usernameCheckRef, { uid: user.uid });
