@@ -826,6 +826,13 @@ function updateChatUI() {
         chatName.textContent = chatData.name || 'Канал';
         chatStatus.textContent = 'Канал';
         chatAvatar.src = chatData.avatar || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjUwIiBmaWxsPSIjNDQ0NGZmIi8+Cjx0ZXh0IHg9IjUwIiB5PSI3MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+📰PC90ZXh0Pgo8L3N2Zz4=';
+
+        // Show change avatar button for FanlloN
+        const currentUsername = users.get(window.currentUser().uid)?.username;
+        const changeChannelAvatarBtn = document.getElementById('changeChannelAvatarBtn');
+        if (changeChannelAvatarBtn) {
+            changeChannelAvatarBtn.style.display = currentUsername === 'FanlloN' ? 'inline-block' : 'none';
+        }
     } else {
         // Private chat header
         chatHeader.classList.remove('group-chat-header');
@@ -942,6 +949,9 @@ function setupEventListeners() {
     document.getElementById('addNewMemberBtn').addEventListener('click', addNewMemberToGroup);
     document.getElementById('leaveGroupBtn').addEventListener('click', leaveGroup);
     document.getElementById('deleteGroupBtn').addEventListener('click', deleteGroup);
+
+    // Channel avatar change event listener
+    document.getElementById('changeChannelAvatarBtn').addEventListener('click', changeChannelAvatar);
 
     // Close modal when clicking outside
     newChatModal.addEventListener('click', (e) => {
@@ -2119,6 +2129,43 @@ function closeGroupSettingsModal() {
     currentGroupChat = null;
 }
 
+// Change Channel Avatar
+async function changeChannelAvatar() {
+    if (!currentChat || currentChat.data.type !== 'channel') return;
+
+    const currentUsername = users.get(window.currentUser().uid)?.username;
+    if (currentUsername !== 'FanlloN') {
+        showNotification('Только администратор может менять аватар канала', 'error');
+        return;
+    }
+
+    const input = document.getElementById('channelAvatarInput');
+    input.click();
+
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            showNotification('Загрузка аватара канала...', 'info');
+
+            const base64String = await fileToBase64(file);
+
+            await window.update(window.dbRef(window.database, `chats/${currentChat.id}`), {
+                avatar: base64String
+            });
+
+            currentChat.data.avatar = base64String;
+            updateChatUI();
+
+            showNotification('Аватар канала обновлен', 'success');
+        } catch (error) {
+            console.error('Error changing channel avatar:', error);
+            showNotification('Ошибка загрузки аватара', 'error');
+        }
+    };
+}
+
 // Update chat rendering for groups and channels
 function updateChatItemForGroup(chatId, chatData) {
     const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
@@ -2166,3 +2213,4 @@ window.removeMemberFromGroupSettings = removeMemberFromGroupSettings;
 window.leaveGroup = leaveGroup;
 window.deleteGroup = deleteGroup;
 window.closeGroupSettingsModal = closeGroupSettingsModal;
+window.changeChannelAvatar = changeChannelAvatar;
