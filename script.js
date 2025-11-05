@@ -92,13 +92,68 @@ document.addEventListener('contextmenu', (e) => {
 // Handle online/offline status
 window.addEventListener('online', () => {
     console.log('Connection restored');
-    window.showNotification('Соединение восстановлено', 'success');
+    if (window.showNotification) {
+        window.showNotification('Соединение восстановлено', 'success');
+    }
 });
 
 window.addEventListener('offline', () => {
     console.log('Connection lost');
-    window.showNotification('Соединение потеряно', 'error');
+    if (window.showNotification) {
+        window.showNotification('Соединение потеряно', 'error');
+    }
 });
+
+// Mobile optimizations
+if ('visualViewport' in window) {
+    window.visualViewport.addEventListener('resize', () => {
+        // Handle keyboard appearance on mobile
+        const viewport = window.visualViewport;
+        document.body.style.height = viewport.height + 'px';
+    });
+}
+
+// Set CSS custom property for mobile viewport height
+function setVH() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+window.addEventListener('load', setVH);
+window.addEventListener('resize', setVH);
+
+// Touch event optimizations
+let touchStartY = 0;
+let touchStartX = 0;
+
+document.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+    if (!e.target.closest('.messages-container, .chats-list, .modal-content')) {
+        return;
+    }
+
+    const touchY = e.touches[0].clientY;
+    const touchX = e.touches[0].clientX;
+    const deltaY = touchStartY - touchY;
+    const deltaX = touchStartX - touchX;
+
+    // Allow vertical scrolling in scrollable containers
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        const scrollable = e.target.closest('.messages-container, .chats-list, .modal-content');
+        if (scrollable) {
+            const atTop = scrollable.scrollTop === 0;
+            const atBottom = scrollable.scrollTop >= scrollable.scrollHeight - scrollable.clientHeight;
+
+            if ((atTop && deltaY < 0) || (atBottom && deltaY > 0)) {
+                e.preventDefault();
+            }
+        }
+    }
+}, { passive: false });
 
 // Performance monitoring (optional)
 if ('performance' in window && 'getEntriesByType' in performance) {

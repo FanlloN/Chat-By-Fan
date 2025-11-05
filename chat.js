@@ -526,8 +526,15 @@ async function sendMessage() {
         return;
     }
 
+    // Show typing indicator on mobile
+    if (window.innerWidth <= 768) {
+        messageInput.style.opacity = '0.7';
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '⏳';
+    }
+
     const messageData = {
-        text: messageInput.value.trim(),
+        text: text,
         sender: window.currentUser().uid,
         timestamp: Date.now(),
         status: 'sent'
@@ -544,6 +551,12 @@ async function sendMessage() {
     if (isDuplicate) {
         showNotification('Сообщение уже отправлено', 'info');
         messageInput.value = '';
+        // Reset mobile UI
+        if (window.innerWidth <= 768) {
+            messageInput.style.opacity = '';
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '📤';
+        }
         return;
     }
 
@@ -571,9 +584,29 @@ async function sendMessage() {
 
         messageInput.value = '';
         scrollToBottom();
+
+        // Reset mobile UI
+        if (window.innerWidth <= 768) {
+            messageInput.style.opacity = '';
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '📤';
+        }
+
+        // Haptic feedback on mobile
+        if ('vibrate' in navigator) {
+            navigator.vibrate(50);
+        }
+
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Ошибка отправки сообщения');
+        showNotification('Ошибка отправки сообщения', 'error');
+
+        // Reset mobile UI on error
+        if (window.innerWidth <= 768) {
+            messageInput.style.opacity = '';
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '📤';
+        }
     }
 }
 
@@ -848,6 +881,63 @@ function setupEventListeners() {
     newChatModal.addEventListener('click', (e) => {
         if (e.target === newChatModal) closeModal();
     });
+
+    // Mobile-specific touch events
+    if ('ontouchstart' in window) {
+        // Add touch feedback for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.transform = 'scale(0.95)';
+            }, { passive: true });
+
+            btn.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 150);
+            }, { passive: true });
+        });
+
+        // Swipe to go back in chat (from right edge)
+        let startX = 0;
+        let startY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!currentChat) return;
+
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const deltaX = startX - endX;
+            const deltaY = startY - endY;
+
+            // Swipe from right edge to go back
+            if (startX > window.innerWidth - 50 && deltaX > 100 && Math.abs(deltaY) < 50) {
+                // Close current chat and go back to chat list
+                currentChat = null;
+                updateChatUI();
+                document.querySelectorAll('.chat-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+            }
+        }, { passive: true });
+    }
+
+    // Handle viewport changes on mobile
+    if ('visualViewport' in window) {
+        window.visualViewport.addEventListener('resize', () => {
+            // Adjust layout when keyboard appears
+            const messagesContainer = document.getElementById('messagesContainer');
+            if (messagesContainer) {
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 300);
+            }
+        });
+    }
 }
 
 // Toggle Emoji Picker
@@ -863,9 +953,19 @@ function closeModal() {
 
 // Scroll to Bottom
 function scrollToBottom() {
-    setTimeout(() => {
+    if (!messagesContainer) return;
+
+    // Use requestAnimationFrame for smoother scrolling on mobile
+    requestAnimationFrame(() => {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }, 100);
+
+        // Additional scroll for mobile keyboards
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 300);
+        }
+    });
 }
 
 // Format Time
