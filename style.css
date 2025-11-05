@@ -1093,15 +1093,9 @@ body.dark-theme .modal-header {
     color: var(--text);
 }
 
-.logout-item {
-    border: 1px solid var(--error);
-    background: rgba(239, 68, 68, 0.1);
-    border-radius: var(--radius);
-}
-
 .logout-btn {
-    background: var(--error);
-    color: white;
+    background: none;
+    color: var(--error);
     border: none;
     padding: 12px 20px;
     border-radius: var(--radius);
@@ -1110,12 +1104,12 @@ body.dark-theme .modal-header {
     cursor: pointer;
     transition: all 0.3s ease;
     width: 100%;
+    text-align: left;
 }
 
 .logout-btn:hover {
-    background: #dc2626;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+    transform: translateX(4px);
 }
 
 .settings-item {

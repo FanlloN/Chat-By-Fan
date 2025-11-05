@@ -51,7 +51,7 @@
         window.onAuthStateChanged = onAuthStateChanged;
         window.EmailAuthProvider = EmailAuthProvider;
         window.updatePassword = updatePassword;
-        window.reauthenticateWithCredential = auth.reauthenticateWithCredential.bind(auth);
+        window.reauthenticateWithCredential = window.auth.reauthenticateWithCredential.bind(window.auth);
         window.dbRef = ref;
         window.set = set;
         window.onValue = onValue;
@@ -277,7 +277,7 @@
                                         <span class="slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-item logout-item">
+                                <div class="setting-item">
                                     <button id="logoutBtn" class="logout-btn">🚪 Выйти из аккаунта</button>
                                 </div>
                             </div>
