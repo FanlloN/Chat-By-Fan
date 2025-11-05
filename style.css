@@ -941,7 +941,7 @@ body.dark-theme .modal-header {
 }
 
 body.dark-theme .settings-menu {
-    background: rgba(15, 23, 42, 0.95);
+    background: linear-gradient(135deg, #1e40af 0%, #3730a3 30%, #581c87 70%, rgba(88, 28, 135, 0.6) 100%);
 }
 
 .settings-item {
