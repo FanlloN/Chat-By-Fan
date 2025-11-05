@@ -90,10 +90,7 @@ let replyToMessageId = null;
     };
 
     console.warn = function(...args) {
-        // Allow warnings but log them
-        if (args.length > 0 && typeof args[0] === 'string' && !args[0].includes('Web Crypto')) {
-            window.securityCore.triggerSecurityAlert('CONSOLE_WARN_ATTEMPT', { args: args.join(' ') });
-        }
+        // Allow warnings but don't trigger security alerts for normal browser warnings
         return originalWarn.apply(console, args);
     };
 

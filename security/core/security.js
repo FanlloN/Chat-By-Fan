@@ -210,6 +210,13 @@ class SecurityCore {
 
     // Security alert system
     triggerSecurityAlert(type, details = {}) {
+        // Prevent infinite recursion by checking if we're already in an alert
+        if (this._alertInProgress) {
+            return;
+        }
+
+        this._alertInProgress = true;
+
         const alert = {
             type,
             timestamp: Date.now(),
@@ -219,13 +226,18 @@ class SecurityCore {
             url: window.location.href
         };
 
-        console.warn('Security Alert:', alert);
+        // Only log critical security alerts to console
+        if (type.includes('VIOLATION') || type.includes('ATTACK') || type.includes('BREACH')) {
+            console.warn('Security Alert:', alert);
+        }
 
         // Store alert for analysis
         this.threats.set(Date.now(), alert);
 
         // In production, this would send to security monitoring service
         // this.reportSecurityAlert(alert);
+
+        this._alertInProgress = false;
     }
 
     // Honeypot system for detecting bots
