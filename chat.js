@@ -292,7 +292,7 @@ function renderMessages(chatId) {
             messagesContainer.appendChild(messageElement);
         } else {
             // Group of images
-            const groupElement = createImageGroupElement(group);
+            const groupElement = createImageGroupElement(group, currentChat ? currentChat.data : null);
             messagesContainer.appendChild(groupElement);
         }
     });
@@ -343,7 +343,7 @@ function groupMessages(messages) {
 }
 
 // Create Image Group Element
-function createImageGroupElement(messageGroup) {
+function createImageGroupElement(messageGroup, chatData) {
     const groupDiv = document.createElement('div');
     const firstMessage = messageGroup[0][1];
     const isOwn = firstMessage.sender === window.currentUser().uid;
@@ -396,8 +396,8 @@ function createImageGroupElement(messageGroup) {
                 </div>
                 <div class="message-actions">
                     <button class="reply-btn" onclick="replyToMessage('${messageGroup[0][0]}')" title="Ответить">↩️</button>
-                    ${isOwn && chatData.type !== 'channel' ? `<button class="edit-btn" onclick="editMessage('${messageGroup[0][0]}')" title="Редактировать">✏️</button>` : ''}
-                    ${chatData.type !== 'channel' ? `<button class="delete-btn" onclick="deleteMessage('${messageGroup[0][0]}')" title="Удалить">🗑️</button>` : ''}
+                    ${isOwn && chatData && chatData.type !== 'channel' ? `<button class="edit-btn" onclick="editMessage('${messageGroup[0][0]}')" title="Редактировать">✏️</button>` : ''}
+                    ${chatData && chatData.type !== 'channel' ? `<button class="delete-btn" onclick="deleteMessage('${messageGroup[0][0]}')" title="Удалить">🗑️</button>` : ''}
                 </div>
             </div>
             <div class="message-time">${time}</div>
